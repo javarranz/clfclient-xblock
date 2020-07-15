@@ -1,4 +1,8 @@
-"""TO-DO: Write a description of what this XBlock is."""
+"""
+XBlock to represent a collaborative activity using the 
+Collaborative Logical Framework consuming services from 
+the CLF Server.
+"""
 
 import pkg_resources
 from web_fragments.fragment import Fragment
