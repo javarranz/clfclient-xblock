@@ -12,7 +12,7 @@ from xblock.fields import Integer, Scope
 
 class CLFClientXBlock(XBlock):
     """
-    TO-DO: document what your XBlock does.
+    Collaborative Logical Framework activity.
     """
 
     # Fields are defined on the class.  You can access them in your code as
