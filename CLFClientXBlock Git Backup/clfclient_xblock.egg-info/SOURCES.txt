@@ -1,0 +1,13 @@
+setup.py
+clfclient/__init__.py
+clfclient/clfclient.py
+clfclient/static/README.txt
+clfclient/static/css/clfclient.css
+clfclient/static/html/clfclient.html
+clfclient/static/js/src/clfclient.js
+clfclient_xblock.egg-info/PKG-INFO
+clfclient_xblock.egg-info/SOURCES.txt
+clfclient_xblock.egg-info/dependency_links.txt
+clfclient_xblock.egg-info/entry_points.txt
+clfclient_xblock.egg-info/requires.txt
+clfclient_xblock.egg-info/top_level.txt
