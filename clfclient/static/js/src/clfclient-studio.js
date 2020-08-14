@@ -1,13 +1,16 @@
 function CLFClientXBlock(runtime, element) {
+
 	$(element).find('.save-button').bind('click', function() {
-		var handlerUrl = runtime.handlerUrl(element, 'studio_submit');
-		var data = {
-			numStakeholders : $(element).find('input[name=numStakeholders]').val(),
-		};
-		runtime.notify('save', {
-			state : 'start'
+		var handlerUrl = runtime.handlerUrl(element, 'submit_studio_edits');
+		var data = {};
+		$(element).find('.setting-input').each(function() {
+			var $field = $(this);
+			data[$field.attr('name')] = $field.val();
 		});
-		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+		//console.log(JSON.stringify(data));
+		var values = {values: data, defaults: []}
+		runtime.notify('save', {state : 'start'});
+		$.post(handlerUrl, JSON.stringify(values)).done(function(response) {
 			runtime.notify('save', {
 				state : 'end'
 			});

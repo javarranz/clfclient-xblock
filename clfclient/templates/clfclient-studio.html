@@ -1,14 +1,47 @@
-
+{% load i18n %}
 <div class="wrapper-comp-settings is-active editor-with-buttons"
   id="settings-tab">
   <ul class="list-input settings-list">
     <li class="field comp-setting-entry is-set">
+      <h1>CLF Default Configuration</h1>
+    </li> {% for field in clf_fields %}
+    <li class="field comp-setting-entry is-set">
       <div class="wrapper-comp-setting">
-        <label class="label setting-label" for="numStakeholders">numStakeholders</label>
-        <input class="input setting-input" name="numStakeholders"
-          id="numStakeholders" value="{self.numStakeholders}" type="text" />
-      </div> <span class="tip setting-help">{{self.numStakeholders}}</span>
-    </li>
+        <label class="label setting-label" for="{{field.name}}">{{field.display_name}}</label>
+        <input class="input setting-input" name="{{field.name}}"
+          id="{{field.name}}" value="{{field.value}}" type="text" />
+      </div> <span class="tip setting-help">{{field.help}}</span>
+    </li> {% endfor %}
+    <li class="field comp-setting-entry is-set">
+      <h1>Package Default Configuration</h1>
+    </li> {% for field in package_fields %}
+    <li class="field comp-setting-entry is-set">
+      <div class="wrapper-comp-setting">
+        <label class="label setting-label" for="{{field.name}}">{{field.display_name}}</label>
+        <input class="input setting-input" name="{{field.name}}"
+          id="{{field.name}}" value="{{field.value}}" type="text" />
+      </div> <span class="tip setting-help">{{field.help}}</span>
+    </li> {% endfor %}
+    <li class="field comp-setting-entry is-set">
+      <h1>Server Configuration</h1>
+    </li> {% for field in server_fields %}
+    <li class="field comp-setting-entry is-set">
+      <div class="wrapper-comp-setting">
+        <label class="label setting-label" for="{{field.name}}">{{field.display_name}}</label>
+        <input class="input setting-input" name="{{field.name}}"
+          id="{{field.name}}" value="{{field.value}}" type="text" />
+      </div> <span class="tip setting-help">{{field.help}}</span>
+    </li> {% endfor %}
+    <li class="field comp-setting-entry is-set">
+      <h1>Logical Framework Configuration</h1>
+    </li> {% for field in lf_fields %}
+    <li class="field comp-setting-entry is-set">
+      <div class="wrapper-comp-setting">
+        <label class="label setting-label" for="{{field.name}}">{{field.display_name}}</label>
+        <input class="input setting-input" name="{{field.name}}"
+          id="{{field.name}}" value="{{field.value}}" type="text" />
+      </div> <span class="tip setting-help">{{field.help}}</span>
+    </li> {% endfor %}
   </ul>
   <div class="xblock-actions">
     <ul>

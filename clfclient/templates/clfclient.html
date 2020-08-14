@@ -1,4 +1,9 @@
+{% load i18n %}
 <div>
-{self.message}
+{{self.message}}
 </div>
-{% print("aaaa") %}
+{% if False %}
+{% trans "Save" %}
+{% else %}
+{% trans "None" %}
+{% endif %}
