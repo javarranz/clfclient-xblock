@@ -2,9 +2,12 @@
 
 import pkg_resources
 
+from xml.etree import ElementTree as ET
+from collections import OrderedDict 
+import requests
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock
-from xblock.fields import Integer, Boolean, String, Scope
+from xblock.fields import Integer, Boolean, String, List, Dict, Scope, ScopeBase, UserScope, BlockScope
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable import StudioContainerXBlockMixin, StudioEditableXBlockMixin
 
@@ -12,6 +15,7 @@ from .clf.clf import Clf
 
 loader = ResourceLoader(__name__)
 
+@XBlock.needs("i18n")
 class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBlock):
     """
     TO-DO: document what your XBlock does.
@@ -21,8 +25,14 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
     display_name = String(default="Collaborative Logical Framework", scope=Scope.settings,
         help="Display name of the component"
     )
-    packageUUID = Integer(default=0, scope=Scope.settings,
+    packageUUID = String(default='', scope=Scope.preferences,
         help="Unique identifier for the package of the Clf in the database",
+    )
+    packageId = String(default='', scope=Scope.preferences,
+        help="Identifier for the package of the Clf in the database",
+    )
+    clfId = String(default='', scope=Scope.preferences,
+        help="Identifier for the Clf in the database",
     )
     
     """ CLF COURSE DEFAULT DATA """
@@ -51,7 +61,7 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
     ) 
        
     """ CLF SERVER CONNECTION """
-    serverIP = String(default="192.168.0.200", scope=Scope.settings,
+    serverIP = String(default="192.168.0.100", scope=Scope.settings,
         help="IP of the CLF Server",
     )
     serverNSpace = String(default="http://services.clf", scope=Scope.settings,
@@ -108,7 +118,7 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
     lf_editable_fields = ('numStakeholders', 'influenceValues', 'impactValues', 'importanceValues', 'numProblems',
         'numObjectives', 'qualitativeData', 'numCriterium', 'numAlternatives', 'quantitativeCriteria', 'quantitativeAlt') 
     editable_fields = clf_editable_fields + package_editable_fields + server_editable_fields + lf_editable_fields
-    
+          
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
         data = pkg_resources.resource_string(__name__, path)
@@ -135,21 +145,102 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         The primary view of the CLFClientXBlock, shown to students
         when viewing courses.
         """
-        self.message = self.ugettext("AUTHOR")
         frag = Fragment()
+        clf_info = {}
+        if (self.clfId != ''):
+            status, clf_info = self.consume_service('getClf', {'clfId': self.clfId})
+        html_context = dict(
+            self=self,
+            clf_info = clf_info,
+            back_icon=self.runtime.local_resource_url(self, 'static/icons/back-016.png'),
+        )
         frag.add_content(loader.render_template(
-            'templates/clfclient.html',
-            {'self': self}
+            'templates/clfclient-author.html',
+            html_context
         ))
-        frag.add_css(self.resource_string("static/css/clfclient.css"))
-        frag.add_javascript(self.resource_string("static/js/src/clfclient.js"))
+        frag.add_css_url("https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css")
+        frag.add_javascript(self.resource_string("static/js/src/clfclient-author.js"))       
         frag.initialize_js('CLFClientXBlock')
         return frag
-
+      
+    @XBlock.json_handler
+    def register_on_server_submit(self, data, suffix=''):
+        status, result = self.consume_service('createPackage')
+        if (status['CodeMajor'] == 'Success'):
+            self.packageUUID = result['return']
+            data = {'packageUUID': self.packageUUID}
+            status, result = self.consume_service('getServerPackageId', data)
+            if (status['CodeMajor'] == 'Success'):
+                self.packageId = result['return']
+                data = OrderedDict([('packageId', self.packageId), ('name', 'New CLF'), 
+                    ('description', 'New description'), ('enabled', 'false')]) 
+                for field_name in self.lf_editable_fields:
+                    field = self.fields[field_name]
+                    data[field_name] = str(self._make_field_info(field_name, field)['value'])
+                data['numDaysAnswer'] = self.numDaysAnswer
+                data['numDaysConsensus'] = self.numDaysConsensus
+                data['proposedAnswer'] = 'false'
+                data['numBestAnswers'] = self.numBestAnswers
+                data['scheduleCalc'] = 'false'
+                data['moderatorValue'] = self.moderatorValue
+                data['moderatorCalc'] = '1'
+                data['moderatorModel'] = 'Moderator.model'
+                status, result = self.consume_service('createClf', data)
+                if (status['CodeMajor'] == 'Success'):
+                    self.clfId = result['return']
+        return {'result': 'success', 'xml_content': ''}
+    
+    def consume_service(self, serv_name, data = {}):
+        url = self.serverProtocol + '://' + self.serverIP + ':' + self.serverPort 
+        url += '/' + self.serverWSDLLocation
+        wsschema = 'http://schemas.xmlsoap.org/soap/envelope/'
+        nspace = self.serverNSpace
+        root = ET.Element('soapenv:Envelope', 
+            {'xmlns:soapenv': wsschema, 'xmlns:ser': nspace}
+        )
+        headUUID = ET.Element('ser:UUID')
+        headUUID.text = self.packageUUID
+        headAuth = ET.Element('ser:clfAuthentication')
+        headAuth.append(headUUID)
+        head = ET.Element('soapenv:Header')
+        head.append(headAuth)
+        root.append(head)
+        bodyData = ET.Element('ser:' + serv_name)
+        for key, val in data.items():
+            e = ET.Element('ser:' + key)
+            e.text = str(val)
+            bodyData.append(e)        
+        body = ET.Element('soapenv:Body')
+        body.append(bodyData)
+        root.append(body)
+        print('SERVICE REQUEST: ', ET.tostring(root))
+        headers = {'Content-Type':'text/xml'}
+        try:
+            response = requests.post(url, headers=headers, data=ET.tostring(root))
+            root = ET.fromstring(response.content)
+            print('SERVICE RESPONSE: ', response.content)
+            status_root = root[0][0]
+            status = {}
+            for child in status_root:
+                status[child.tag.split('}', 1)[1]] = child.text
+            result_root = root[1][0][0]
+            result = {}
+            if (len(result_root) == 0):
+                # single result
+                result[result_root.tag.split('}', 1)[1]] = result_root.text 
+            else:
+                # structured result
+                for child in result_root:
+                    result[child.tag.split('}', 1)[1]] = child.text 
+            print('SERVICE STATUS: ', status)
+            print('SERVICE RESULT: ', result)
+        except:
+            print('SERVICE ERROR: Cannot connect to the CLF server')
+        return status, result
+        
     def studio_view(self, context=None):
         """
-        The primary view of the CLFClientXBlock, shown to students
-        when viewing courses.
+        The studio view of the CLFClientXBlock.
         """
         clf_fields = []
         for field_name in self.clf_editable_fields:
@@ -183,31 +274,3 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         frag.add_javascript(self.resource_string("static/js/src/clfclient-studio.js"))
         frag.initialize_js('CLFClientXBlock')
         return frag
-      
-    @XBlock.json_handler
-    def studio_submit(self, data, suffix=''):
-        """
-        Called when submitting the form in Studio.
-        """
-        print("AAAAAAAAAAAAAAAAAAAAAAAAA", data)
-        self.serverIP = data.get('serverIP')
-    
-        return {'result': 'success'}
-        
-    # TO-DO: change this to create the scenarios you'd like to see in the
-    # workbench while developing your XBlock.
-    @staticmethod
-    def workbench_scenarios():
-        """A canned scenario for display in the workbench."""
-        return [
-            ("CLFClientXBlock",
-             """<clfclient/>
-             """),
-            ("Multiple CLFClientXBlock",
-             """<vertical_demo>
-                <clfclient/>
-                <clfclient/>
-                <clfclient/>
-                </vertical_demo>
-             """),
-        ]

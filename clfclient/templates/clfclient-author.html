@@ -1,0 +1,159 @@
+{% load i18n %}
+{% if self.packageUUID != "" %}
+<div class="container">
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" data-toggle="tab" id="clf-tab" href="#">{% trans "CLF" %}</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" id="groups-tab" href="#">{% trans "Groups" %}</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" id="parameters-tab" href="#">{% trans "Parameters" %}</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" id="indicators-tab" href="#">{% trans "Indicators" %}</a>
+    </li>
+  </ul>
+  <div class="tab-content">
+    <div id="clf-div" class="container tab-pane active"><br>
+        <h3>
+          <label><strong>{{clf_info.name}}</strong></label>
+          <div style="float:right">
+            <button id="edit-clf-btn" class="btn btn-primary">
+              {% trans "Edit" %}</button>
+            <button id="delete-clf-btn" class="btn btn-primary">
+              {% trans "Remove" %}</button>
+          </div>
+        </h3>
+       <div style="float:left">
+          <ul>
+            <li><strong>{% trans "Created by: " %}</strong></li>
+            <li><strong>{% trans "Name: " %}</strong>{{clf_info.name}}</li>
+            <li><strong>{% trans "Description: " %}</strong>{{clf_info.description}}</li>
+            <li>
+              <strong>{% trans "Activity File: " %}</strong>
+              <a href="#">[{% trans "Add file"%}]</a>
+            </li>
+          </ul>
+       </div>
+       <div style="float:right">
+          <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="clf-enable-switch">
+            <span class="custom-control-label" for="clf-enable-switch">
+              {% trans "This activity is " %}
+              {% if clf_info.enabled == 'true' %}
+                <span style="color:blue">{% trans "Enabled" %}</span> 
+              {% else  %}
+                <span style="color:red">{% trans "Disabled" %}</span>
+              {% endif  %}
+            </span>
+          </div>
+          <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="clf-propose-answer-switch">
+            <span class="custom-control-label" for="customSwitches">
+              {% trans "The proposed answer is " %}
+              {% if clf_info.proposedAnswer == 'true' %}
+                <span style="color:blue">{% trans "Enabled" %}</span> 
+              {% else  %}
+                <span style="color:red">{% trans "Disabled" %}</span>
+              {% endif  %}
+            </span>
+          </div>
+          <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="clf-schedule-calc-switch">
+            <span class="custom-control-label" for="customSwitches">
+              {% trans "The schedule calculation is " %}
+              {% if clf_info.scheduleCalc == 'true' %}
+                <span style="color:blue">{% trans "Enabled" %}</span> 
+              {% else  %}
+                <span style="color:red">{% trans "Disabled" %}</span>
+              {% endif  %}
+            </span>
+          </div>
+        </div>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>{% trans "Name of the Phase" %}</th>
+              <th>{% trans "Init Date" %}</th>
+              <th>{% trans "Cons. Date" %}</th>
+              <th>{% trans "End Date" %}</th>
+              <th>{% trans "Status" %}</th>
+              <th>Buttons</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>John</td>
+              <td>Doe</td>
+              <td>John</td>
+              <td>Doe</td>
+              <td>john@example.com</td>
+            </tr>
+            <tr>
+              <td>Mary</td>
+              <td>Moe</td>
+              <td>John</td>
+              <td>Doe</td>
+              <td>mary@example.com</td>
+            </tr>
+            <tr>
+              <td>July</td>
+              <td>Dooley</td>
+              <td>John</td>
+              <td>Doe</td>
+              <td>july@example.com</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="groups-div" class="container tab-pane"><br>
+      <h3>{% trans "Groups" %}</h3>
+      <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    </div>
+    <div id="parameters-div" class="container tab-pane"><br>
+      <h3>{% trans "Parameters" %}</h3>
+      <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+    </div>
+    <div id="indicators-div" class="container tab-pane"><br>
+      <h3>{% trans "Indicators" %}</h3>
+      <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+    </div>
+  </div>
+</div>
+{% else %}
+<div id="register-div">
+  <h3><strong>{% trans "Server Configuration" %}</strong></h3>
+  <p>{% trans "You can edit it pressing the button above" %}</p>
+  <table class="table">
+    <tbody>
+      <tr>
+        <td>{% trans "Server IP" %}</td>
+        <td><strong>{{self.serverIP}}</strong></td>
+      </tr>
+      <tr>
+        <td>{% trans "Server Port" %}</td>
+        <td><strong>{{self.serverPort}}</strong></td>
+      </tr>
+      <tr>
+        <td>{% trans "Server Protocol" %}</td>
+        <td><strong>{{self.serverProtocol}}</strong></td>
+      </tr>
+      <tr>
+        <td>{% trans "Server Namespace" %}</td>
+        <td><strong>{{self.serverNSpace}}</strong></td>
+      </tr>
+      <tr>
+        <td>{% trans "Server WDSL Location" %}</td>
+        <td><strong>{{self.serverWSDLLocation}}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+  <button id="register-btn" class="btn btn-primary">
+    {% trans "Register on Server" %}</button>
+</div>
+{% endif %}
+<div><h3>{{self.packageUUID}}-{{self.packageId}}-{{self.clfId}}</h3></div>
