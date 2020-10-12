@@ -1,4 +1,15 @@
 function CLFClientXBlock(runtime, element) {
+
+	$('#register-btn').bind('click', function() {
+		var handlerUrl = runtime.handlerUrl(element, 'register_on_server_submit');
+		var data = {};
+		runtime.notify('save', {state : 'start'});
+		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			$('#packageUUID').val(response);
+			$('#register-btn').hide();
+			runtime.notify('save', {state : 'end'});
+		});
+	});
 	
 	$('#save-studio-settings').bind('click', function() {
 		var handlerUrl = runtime.handlerUrl(element, 'submit_studio_edits');

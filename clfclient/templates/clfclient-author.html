@@ -1,87 +1,90 @@
 {% load i18n %}
-{% if self.packageUUID != "" %}
+{% if self.packageUUID != "" %} 
 <div class="container">
   <ul class="nav nav-tabs" role="tablist">
     <li class="nav-item">
-      <a class="nav-link active" data-toggle="tab" id="clf-tab" href="#">{% trans "CLF" %}</a>
+      <a class="nav-link clf_tab active" data-toggle="tab" id="clf_tab" href="#">{% trans "CLF" %}</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" data-toggle="tab" id="groups-tab" href="#">{% trans "Groups" %}</a>
+      <a class="nav-link clf_tab" data-toggle="tab" id="groups_tab" href="#">{% trans "Groups" %}</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" data-toggle="tab" id="parameters-tab" href="#">{% trans "Parameters" %}</a>
+      <a class="nav-link clf_tab" data-toggle="tab" id="parameters_tab" href="#">{% trans "Parameters" %}</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" data-toggle="tab" id="indicators-tab" href="#">{% trans "Indicators" %}</a>
+      <a class="nav-link clf_tab" data-toggle="tab" id="indicators_tab" href="#">{% trans "Indicators" %}</a>
     </li>
   </ul>
   <div class="tab-content">
-    <div id="clf-div" class="container tab-pane active"><br>
+    <div id="clf_div" class="container tab-pane active"><br>
+      <!-- <img src='{{back_icon}}'/> -->
+      <div id="clf_tabs">
         <h3>
-          <label><strong>{{clf_info.name}}</strong></label>
+          <label><strong>{{clf.name}}</strong></label>
           <div style="float:right">
-            <button id="edit-clf-btn" class="btn btn-primary">
+            <button id="phase_new" class="btn btn-primary">
+              {% trans "New Phase" %}</button>
+            <button id="clf_edit" class="btn btn-primary">
               {% trans "Edit" %}</button>
-            <button id="delete-clf-btn" class="btn btn-primary">
+            <button id="clf_delete" class="btn btn-danger">
               {% trans "Remove" %}</button>
           </div>
         </h3>
-       <div style="float:left">
+        <div style="float:left">
           <ul>
-            <li><strong>{% trans "Created by: " %}</strong></li>
-            <li><strong>{% trans "Name: " %}</strong>{{clf_info.name}}</li>
-            <li><strong>{% trans "Description: " %}</strong>{{clf_info.description}}</li>
+            <li><strong>{% trans "Created by: " %}</strong>{{user}}</li>
+            <li><strong>{% trans "Name: " %}</strong>{{clf.name}}</li>
+            <li><strong>{% trans "Description: " %}</strong>{{clf.description}}</li>
             <li>
               <strong>{% trans "Activity File: " %}</strong>
               <a href="#">[{% trans "Add file"%}]</a>
             </li>
           </ul>
-       </div>
-       <div style="float:right">
-          <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" id="clf-enable-switch">
-            <span class="custom-control-label" for="clf-enable-switch">
-              {% trans "This activity is " %}
-              {% if clf_info.enabled == 'true' %}
-                <span style="color:blue">{% trans "Enabled" %}</span> 
-              {% else  %}
-                <span style="color:red">{% trans "Disabled" %}</span>
-              {% endif  %}
-            </span>
-          </div>
-          <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" id="clf-propose-answer-switch">
-            <span class="custom-control-label" for="customSwitches">
-              {% trans "The proposed answer is " %}
-              {% if clf_info.proposedAnswer == 'true' %}
-                <span style="color:blue">{% trans "Enabled" %}</span> 
-              {% else  %}
-                <span style="color:red">{% trans "Disabled" %}</span>
-              {% endif  %}
-            </span>
-          </div>
-          <div class="custom-control custom-switch">
-            <input type="checkbox" class="custom-control-input" id="clf-schedule-calc-switch">
-            <span class="custom-control-label" for="customSwitches">
-              {% trans "The schedule calculation is " %}
-              {% if clf_info.scheduleCalc == 'true' %}
-                <span style="color:blue">{% trans "Enabled" %}</span> 
-              {% else  %}
-                <span style="color:red">{% trans "Disabled" %}</span>
-              {% endif  %}
-            </span>
-          </div>
         </div>
-      <div class="table-responsive">
-        <table class="table table-striped">
-          <thead>
+        <div style="float:right">
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="clf-enable-switch">
+              <span class="custom-control-label" for="clf-enable-switch">
+                {% trans "This activity is " %}
+                {% if clf.enabled == 'true' %}
+                  <span style="color:blue">{% trans "Enabled" %}</span> 
+                {% else  %}
+                  <span style="color:red">{% trans "Disabled" %}</span>
+                {% endif  %}
+              </span>
+            </div>
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="clf-propose-answer-switch">
+              <span class="custom-control-label" for="customSwitches">
+                {% trans "The proposed answer is " %}
+                {% if clf.proposedAnswer == 'true' %}
+                  <span style="color:blue">{% trans "Enabled" %}</span> 
+                {% else  %}
+                  <span style="color:red">{% trans "Disabled" %}</span>
+                {% endif  %}
+              </span>
+            </div>
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="clf-schedule-calc-switch">
+              <span class="custom-control-label" for="customSwitches">
+                {% trans "The schedule calculation is " %}
+                {% if clf.scheduleCalc == 'true' %}
+                  <span style="color:blue">{% trans "Enabled" %}</span> 
+                {% else  %}
+                  <span style="color:red">{% trans "Disabled" %}</span>
+                {% endif  %}
+              </span>
+            </div>
+          </div>
+        <div class="table-responsive">
+        <table class="table">
+          <thead class="thead-light">
             <tr>
-              <th>{% trans "Name of the Phase" %}</th>
-              <th>{% trans "Init Date" %}</th>
-              <th>{% trans "Cons. Date" %}</th>
-              <th>{% trans "End Date" %}</th>
-              <th>{% trans "Status" %}</th>
-              <th>Buttons</th>
+              <th><b>{% trans "Name of the Phase" %}</b></th>
+              <th><b>{% trans "Init Date" %}</b></th>
+              <th><b>{% trans "Cons. Date" %}</b></th>
+              <th><b>{% trans "End Date" %}</b></th>
+              <th><b>{% trans "Status" %}</b></th>
             </tr>
           </thead>
           <tbody>
@@ -92,42 +95,485 @@
               <td>Doe</td>
               <td>john@example.com</td>
             </tr>
-            <tr>
-              <td>Mary</td>
-              <td>Moe</td>
-              <td>John</td>
-              <td>Doe</td>
-              <td>mary@example.com</td>
-            </tr>
-            <tr>
-              <td>July</td>
-              <td>Dooley</td>
-              <td>John</td>
-              <td>Doe</td>
-              <td>july@example.com</td>
-            </tr>
           </tbody>
         </table>
       </div>
+      </div>
+      <div id="phase_view" style='display: none'>
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header modal-light">
+              <b><label class="modal-title" id="phase_view_title">Modal Heading</label></b>
+                <button type="submit" class="btn btn-danger" id="phase_delete_send" style="float:right">
+                  {% trans "Delete" %}
+                </button>
+            </div>
+            <div class="modal-body" id="phase_view_body">
+              <form id="phase_form" class="was-validated">
+                <input type="hidden" id="phase_id">
+                <input type="hidden" id="phase_weka_model">
+                <div class="form-group row">
+                  <label for="phase_name" class="col-sm-3 col-form-label">
+                    {% trans "Name" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <input class="form-control" id="phase_name" type="text" required>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="phase_start_date" class="col-sm-3 col-form-label">
+                    {% trans "Start Date" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <input class="form-control" id="phase_start_date" type="date" required>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="phase_start_time" class="col-sm-3 col-form-label">
+                    {% trans "Start Time" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <input class="form-control" id="phase_start_time" type="time" value="00:00" required>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="phase_days_answer" class="col-sm-3 col-form-label">
+                    {% trans "Days for Answer Stage" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <input class="form-control" id="phase_days_answer" type="number" value="5" required>
+                    <i class="form-text text-muted">
+                      {% trans "Number of days from the Start to the Agreement Stage" %}
+                    </i>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="phase_agree_time" class="col-sm-3 col-form-label">
+                    {% trans "Agreement Time" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <input class="form-control" id="phase_agree_time" type="time" value="00:00" required>
+                    <i class="form-text text-muted">
+                      {% trans "Beginning time of the Agreement Stage" %}
+                    </i>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="phase_days_answer" class="col-sm-3 col-form-label">
+                    {% trans "Days for Agreement Stage" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <input class="form-control" id="phase_days_answer" type="number" value="2" required>
+                    <i class="form-text text-muted">
+                      {% trans "Number of days from the Agreement Stage to the End" %}
+                    </i>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="phase_end_time" class="col-sm-3 col-form-label">
+                    {% trans "End Time" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <input class="form-control" id="phase_end_time" type="time" value="00:00" required>
+                    <i class="form-text text-muted">
+                      {% trans "End time of the Agreement Stage" %}
+                    </i>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="phase_automatic" class="col-sm-3 col-form-label">
+                    {% trans "Automatic Status Change" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <div class="form-check">
+                      <label class="col-form-label">
+                        <input class="form-check-input" id="phase_automatic_start" type="checkbox" checked>
+                        {% trans "Start Date" %}
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <label class="col-form-label">
+                        <input class="form-check-input" id="phase_automatic_agree" type="checkbox" checked>
+                        {% trans "Agreement Date" %}
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <label class="col-form-label">
+                        <input class="form-check-input" id="phase_automatic_end" type="checkbox" checked>
+                        {% trans "End Date" %}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="phase_automatic" class="col-sm-3 col-form-label">
+                    {% trans "Automatic Group Building" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <div class="form-check">
+                      <label class="col-form-label">
+                        <input class="form-check-input" id="phase_automatic_group" type="checkbox">
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div class="modal-header">
+              <label class="modal-title" id="phase_view_error" style="color:red;float:right;display:none"></label>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-success" id="phase_new_send">
+                    {% trans "Send" %}
+                  </button>
+              <button type="submit" class="btn btn-success" id="phase_edit_send">
+                    {% trans "Edit" %}
+                  </button>
+              <button type="button" class="btn btn-primary" id="phase_view_close">
+                    {% trans "Close" %}
+                  </button>
+            </div>
+          </div>
+        </div>
     </div>
-    <div id="groups-div" class="container tab-pane"><br>
-      <h3>{% trans "Groups" %}</h3>
-      <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
     </div>
-    <div id="parameters-div" class="container tab-pane"><br>
-      <h3>{% trans "Parameters" %}</h3>
-      <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+    <div id="groups_div" class="container tab-pane"><br>
+      <label><strong>{% trans "Groups" %}</strong></label>
+      <p>{% for x in self.clf.indicators %}<p>{{x}}</p>{% endfor %}</p>
     </div>
-    <div id="indicators-div" class="container tab-pane"><br>
-      <h3>{% trans "Indicators" %}</h3>
-      <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+    <div id="parameters_div" class="container tab-pane"><br>
+      <label><strong>{% trans "Parameters List" %}</strong></label>
+      <p>{% trans "You can only edit or delete non standard parameters created into the current CLF" %}</p>
+      <div id="param_tabs"> 
+	      <button type="submit" class="btn btn-primary" id="param_new" style="float: right">
+	      	{% trans "New Parameter" %}
+	      </button>
+	      <ul class="nav nav-tabs" role="tablist">
+		    <li class="nav-item">
+		      <a class="nav-link param_tab active" data-toggle="tab" id="param_active_tab" href="#">
+		      	{% trans "Active Parameters" %}
+		      </a>
+		    </li>
+		    <li class="nav-item">
+		      <a class="nav-link param_tab" data-toggle="tab" id="param_passive_tab" href="#">
+		      	{% trans "Passive Parameters" %}
+		      </a>
+		    </li>
+		  </ul>
+	      <div class="table-responsive tab-content">
+	        <table class="table">
+	          <thead class="thead-light">
+	            <tr>
+	              <th><b>{% trans "Alias" %}</b></th>
+	              <th><b>{% trans "Name" %}</b></th>
+	              <th><b>{% trans "Description" %}</b></th>
+	              <th><b>{% trans "Target" %}</b></th>
+	              <th><b>{% trans "Actions" %}</b></th>
+	            </tr>
+	          </thead>
+	          <tbody id="param_tbody">
+	          	{% for param in clf.parameters %}
+	            <tr class="{{param.metricType}}" id="{{param.id}}"
+                  {% if param.metricType == "Passive" %} style='display: none' {% endif %}>
+	              <td><b>{% trans param.metricAlias %}</b></td>
+	              <td>{% trans param.name %}</td>
+	              <td>{% trans param.description %}</td>
+	              <td>
+	              	{% if param.target == "0" %} {% trans "Versions" %}
+	              	{% elif param.target == "1" %} {% trans "Forums" %}
+	              	{% elif param.target == "2" %} {% trans "Ratings" %}
+	              	{% elif param.target == "3" %} {% trans "Generic" %}
+	              	{% endif %}
+	              </td>
+	              <td>
+                    {% if param.parameterClass == "S" %}
+    	              	<a href="#" id="{{param.id}}" class="param_view_link" title='{% trans "View" %}'>
+    	              		<i class='fas fa-search'></i> 
+    	              	</a>
+                    {% else %} 
+                        <a href="#" id="{{param.id}}" class="param_edit_link" title='{% trans "Edit" %}'>
+                          <i class='fas fa-edit'></i>
+                        </a>
+                    {% endif %}
+	              </td>
+	            </tr>
+	            {% endfor %}
+	          </tbody>
+	        </table>
+	      </div>
+      </div>
+      <div id="param_view" style='display: none'>
+	    <div class="modal-dialog">
+	      <div class="modal-content">
+	        <div class="modal-header modal-light">
+	          <b><label class="modal-title" id="param_view_title">Modal Heading</label></b>
+              <button type="submit" class="btn btn-danger" id="param_delete_send" style="float:right">
+                {% trans "Delete" %}
+              </button>
+	        </div>
+	        <div class="modal-body" id="param_view_body">
+			  <form id="param_form" class="was-validated">
+                  <input type="hidden" id="param_id">
+				  <div class="form-group row">
+				    <label for="param_name" class="col-sm-2 col-form-label">
+				    	{% trans "Name" %}
+				    </label>
+				    <div class="col-sm-10">
+				      <input class="form-control" id="param_name" type="text" required>
+				    </div>
+				  </div>
+				  <div class="form-group row">
+				    <label for="param_description" class="col-sm-2 col-form-label">
+				    	{% trans "Description" %}
+				    </label>
+				    <div class="col-sm-10">
+				      <textarea class="form-control" id="param_description" rows="2" required></textarea>
+				    </div>
+				  </div>
+				  <div class="form-group row">
+				    <label for="param_alias" class="col-sm-2 col-form-label">
+				    	{% trans "Alias" %}
+				    </label>
+				    <div class="col-sm-10">
+				      <input class="form-control" id="param_alias" maxlength="3" required>
+                      <div class="invalid-feedback">{% trans "Please fill field with 3 letters" %}</div>
+				    </div>
+				  </div>
+				  <div class="form-group row">
+				    <label for="param_type" class="col-sm-2 col-form-label">
+				    	{% trans "Type" %}
+				    </label>
+				    <div class="col-sm-10">
+				      	<select class="form-control" id="param_type">
+					      <option value="Active">{% trans "Active" %}</option>
+					      <option value="Passive">{% trans "Passive" %}</option>
+					    </select>
+				    </div>
+				  </div>
+				  <div class="form-group row">
+				    <label for="param_data_type" class="col-sm-2 col-form-label">
+				    	{% trans "Data Type" %}
+				    </label>
+				    <div class="col-sm-10">
+				      	<select class="form-control" id="param_data_type">
+					      <option value="0">{% trans "Integer" %}</option>
+					      <option value="1">{% trans "Text" %}</option>
+					      <option value="2">{% trans "Time" %}</option>
+					    </select>
+				    </div>
+				  </div>
+				  <div class="form-group row">
+				    <label for="param_target" class="col-sm-2 col-form-label">
+				    	{% trans "Target" %}
+				    </label>
+				    <div class="col-sm-10">
+				      	<select class="form-control" id="param_target">
+					      <option value="0">{% trans "Versions" %}</option>
+					      <option value="1">{% trans "Forums" %}</option>
+					      <option value="2">{% trans "Ratings" %}</option>
+					      <option value="3">{% trans "Generic" %}</option>
+					    </select>
+				    </div>
+				  </div>
+				  <div class="form-group row">
+				    <label for="param_query" class="col-sm-2 col-form-label">
+				    	{% trans "Query" %}
+				    </label>
+				    <div class="col-sm-10">
+				      <textarea class="form-control" id="param_query" rows="5" required></textarea>
+                      <div class="invalid-feedback">{% trans "Please write a valid SQL query." %}</div>
+				    </div>
+				  </div>
+			  </form>
+	        </div>
+            <div class="modal-header">
+              <label class="modal-title" id="param_view_error" style="color:red;float:right"></label>
+            </div>
+	        <div class="modal-footer">
+	        	<button type="submit" class="btn btn-success" id="param_new_send">
+                  {% trans "Send" %}
+                </button>
+	        	<button type="submit" class="btn btn-success" id="param_edit_send">
+                  {% trans "Edit" %}
+                </button>
+		        <button type="button" class="btn btn-primary" id="param_view_close">
+                  {% trans "Close" %}
+                </button>
+	        </div>
+	      </div>
+	    </div>
+	  </div>
+    </div>
+    <div id="indicators_div" class="container tab-pane"><br>
+      <label><strong>{% trans "Indicators List" %}</strong></label>
+      <p>{% trans "You can only edit or delete non standard indicators created into the current CLF. If the name of the indicator appears in red it means that there is no Weka model for it yet" %}</p>
+      <div id="ind_tabs"> 
+        <div style="float:right">
+          <button type="submit" class="btn btn-primary" id="ind_calc_rules">
+            {% trans "Calculation by Rules" %}
+          </button>
+          <button type="submit" class="btn btn-primary" id="ind_calc_weka">
+            {% trans "Calculation by Weka" %}
+          </button>
+          <button type="submit" class="btn btn-primary" id="ind_new">
+            {% trans "New Indicator" %}
+          </button>
+        </div>
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link ind_tab active" data-toggle="tab" id="ind_active_tab" href="#">
+              {% trans "Active Indicators" %}
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link ind_tab" data-toggle="tab" id="ind_passive_tab" href="#">
+              {% trans "Passive Indicators" %}
+            </a>
+          </li>
+        </ul>
+        <div class="table-responsive tab-content">
+          <table class="table">
+            <thead class="thead-light">
+              <tr>
+                <th><b>{% trans "Name" %}</b></th>
+                <th><b>{% trans "Description" %}</b></th>
+                <th><b>{% trans "Type" %}</b></th>
+                <th><b>{% trans "Actions" %}</b></th>
+              </tr>
+            </thead>
+            <tbody id="ind_tbody">
+              {% for ind in clf.indicators %}
+              <tr class="{% if ind.type == '0' %}Active{% else %}Passive{% endif %}" id="{{ind.id}}"
+                  {% if ind.type == "1" %} style='display: none' {% endif %}>
+                <td>{% trans ind.name %}</td>
+                <td>{% trans ind.description %}</td>
+                <td>
+                  {% if ind.type == "0" %} 
+                    <span>{% trans "Active" %}</span> 
+                  {% else %} 
+                    <span>{% trans "Passive" %}</span> 
+                  {% endif %}
+                </td>
+                <td style="width:70px">
+                    {% if ind.indicatorClass == "S" %}
+                      <a href="#" id="{{ind.id}}" class="ind_view_link" title='{% trans "View" %}'>
+                        <i class='fas fa-search'></i>
+                      </a>&nbsp; 
+                    {% else %} 
+                        <a href="#" id="{{ind.id}}" class="ind_edit_link" title='{% trans "Edit" %}'>
+                          <i class='fas fa-edit'></i>
+                        </a>&nbsp; 
+                    {% endif %}
+                    <a href="#" id="{{ind.id}}" class="ind_params_link" title='{% trans "Parameters" %}'>
+                      <i class='fas fa-chart-bar'></i>
+                    </a>&nbsp; 
+                    {% if ind.typeCalculation == "1" %}
+                      <a href="#" id="{{ind.id}}" class="ind_calc ind_rules_link" title='{% trans "Muanual Rules" %}'>
+                        <i class='far fa-hand-paper'></i>
+                      </a>&nbsp; 
+                    {% else %} 
+                        <a href="#" id="{{ind.id}}" class="ind_calc ind_weka_link" title='{% trans "Weka Calculation" %}'>
+                          <i class='fab fa-weebly'></i>
+                        </a>
+                    {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div id="ind_view" style='display: none'>
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header modal-light">
+              <b><label class="modal-title" id="ind_view_title">Modal Heading</label></b>
+                <button type="submit" class="btn btn-danger" id="ind_delete_send" style="float:right">
+                  {% trans "Delete" %}
+                </button>
+            </div>
+            <div class="modal-body" id="ind_view_body">
+              <form id="ind_form" class="was-validated">
+                <input type="hidden" id="ind_id">
+                <input type="hidden" id="ind_weka_model">
+                <div class="form-group row">
+                  <label for="ind_name" class="col-sm-3 col-form-label">
+                    {% trans "Name" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <input class="form-control" id="ind_name" type="text" required>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="ind_description" class="col-sm-3 col-form-label">
+                    {% trans "Description" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <textarea class="form-control" id="ind_description" rows="2" required></textarea>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="ind_type" class="col-sm-3 col-form-label">
+                    {% trans "Type" %}
+                  </label>
+                  <div class="col-sm-9">
+                      <select class="form-control" id="ind_type">
+                      <option value="0">{% trans "Active" %}</option>
+                      <option value="1">{% trans "Passive" %}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="ind_manual_rule" class="col-sm-3 col-form-label">
+                    {% trans "Manual Rule" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <input class="form-control" id="ind_manual_rule" type="text" required>
+                    <i id="emailHelp" class="form-text text-muted">
+                      {% trans "Represents the number of positive metrics to take into account for the manual classification" %}
+                    </i>
+                  </div>
+                </div>
+                <div class="form-group row">
+                  <label for="ind_type_cald" class="col-sm-3 col-form-label">
+                    {% trans "Type of Calculation" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" name="ind_type_calc" type="radio" id="ind_type_calc1" value="0">
+                      <label class="form-check-label" for="ind_type_calc1">Weka</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" name="ind_type_calc" type="radio" id="ind_type_calc2" value="1">
+                      <label class="form-check-label" for="ind_type_calc2">{% trans "Manual Rule" %}</label>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+              <div class="modal-header">
+                <label class="modal-title" id="ind_view_error" style="color:red;float:right"></label>
+              </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-success" id="ind_new_send">
+                    {% trans "Send" %}
+                  </button>
+              <button type="submit" class="btn btn-success" id="ind_edit_send">
+                    {% trans "Edit" %}
+                  </button>
+              <button type="button" class="btn btn-primary" id="ind_view_close">
+                    {% trans "Close" %}
+                  </button>
+            </div>
+          </div>
+        </div>
     </div>
   </div>
 </div>
 {% else %}
 <div id="register-div">
   <h3><strong>{% trans "Server Configuration" %}</strong></h3>
-  <p>{% trans "You can edit it pressing the button above" %}</p>
+  <p>{% trans "This is the server cofiguration. You have to click the Edit button to register this instance into the server" %}</p>
   <table class="table">
     <tbody>
       <tr>
@@ -152,8 +598,6 @@
       </tr>
     </tbody>
   </table>
-  <button id="register-btn" class="btn btn-primary">
-    {% trans "Register on Server" %}</button>
 </div>
 {% endif %}
 <div><h3>{{self.packageUUID}}-{{self.packageId}}-{{self.clfId}}</h3></div>
