@@ -2,10 +2,12 @@
 
 import pkg_resources
 import pprint
+import dateutil.parser
 
 from xml.etree import ElementTree as ET
 from collections import OrderedDict 
 import requests
+from django.contrib.auth.models import User, Group
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock
 from xblock.fields import Integer, Boolean, String, List, Dict, Scope, ScopeBase, UserScope, BlockScope
@@ -151,6 +153,7 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         when viewing courses.
         """
         user_service = self.runtime.service(self, 'user')
+        dj_users = User.objects.all()
         if (self.clfId == ''):
             data = OrderedDict([('packageId', self.packageId), ('name', 'New CLF'), 
                 ('description', 'New description'), ('enabled', 'false')]) 
@@ -169,9 +172,11 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
             if (status['CodeMajor'] == 'Success'):
                 self.clfId = result['return']
                 status = self.update_clf_info_from_server()
+        status = self.update_clf_info_from_server()
         frag = Fragment()  
         html_context = dict(
             user = user_service.get_current_user().full_name,
+            dj_users = dj_users,
             self = self,
             clf = self.clf,
             back_icon=self.runtime.local_resource_url(self, 'static/icons/back-016.png'),
@@ -183,9 +188,16 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         frag.initialize_js('CLFClientXBlock')
         return frag
     
+    def get_date_from_string(self, str):
+        return dateutil.parser.parse(str)
+    
     def update_clf_info_from_server(self):
         status, self.clf = self.clf_service('getClf', {'clfId': self.clfId})
         if (status['CodeMajor'] == 'Success'):
+#             for ph in self.clf['phases']:
+#                 ph['ini'] = dateutil.parser.parse(ph['ini'])
+#                 ph['agree'] = dateutil.parser.parse(ph['agree'])
+#                 ph['fin'] = dateutil.parser.parse(ph['fin'])
             for ind in self.clf['indicators']:
                 status, result = self.clf_service('getIndicatorTypeCalculation', OrderedDict([
                     ('clfId', self.clfId), ('indicatorId', ind['id'])]))
@@ -194,6 +206,65 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
                     ind['typeCalculation'] = result['return']
                     self.clf['indicators'][i] = ind
         return status
+    
+    @XBlock.json_handler
+    def phase_manage(self, data, suffix=''):
+        if (data['action'] == 'view'):
+            for param in self.clf['phases']:
+                if (param['id'] == data['phase_id']):
+                    return {'result': 'success', 'phase_data': param}
+        elif (data['action'] == 'new'):
+            phase = OrderedDict([
+                ('clfId', self.clfId), 
+                ('name', data['phase_data']['name']), 
+                ('type', data['phase_data']['type']), 
+                ('state', data['phase_data']['state']), 
+                ('ini', data['phase_data']['ini']), 
+                ('agree', data['phase_data']['agree']), 
+                ('fin', data['phase_data']['agree']), 
+                ('automatic', data['phase_data']['automatic']), 
+                ('guideline', data['phase_data']['guideline']), 
+                ('scheduleCalc', data['phase_data']['scheduleCalc']), 
+                ('autoRebuild', data['phase_data']['autoRebuild'])
+            ]) 
+            status, result = self.clf_service('createPhase', phase)
+            if (status['CodeMajor'] == 'Success'):
+                phase['id'] = result['return']
+                status = self.update_clf_info_from_server()
+                if (status['CodeMajor'] == 'Success'):
+                    return {'result': 'success', 'phase_data': phase}
+        elif (data['action'] == 'edit'):
+            phase = OrderedDict([
+                ('phaseeterId', data['phase_data']['id']), 
+                ('name', data['phase_data']['name']), 
+                ('description', data['phase_data']['description']), 
+                ('type', '0'), 
+                ('target', data['phase_data']['target']), 
+                ('query', data['phase_data']['query']), 
+                ('clfId', self.clfId), 
+                ('phaseeterClass', 'N'), 
+                ('metricAlias', data['phase_data']['metricAlias']), 
+                ('values', ''), 
+                ('metricType', data['phase_data']['metricType']), 
+                ('dataType', data['phase_data']['dataType']),
+            ]) 
+            status, result = self.clf_service('updatePhase', phase)
+            if (status['CodeMajor'] == 'Success'):
+                phase['id'] = phase['phaseId']
+                status = self.update_clf_info_from_server()
+                if (status['CodeMajor'] == 'Success'):
+                    return {'result': 'success', 'phase_data': phase}
+        elif (data['action'] == 'delete'):
+            phase = OrderedDict([
+                ('phaseId', data['phase_data']['id']), 
+            ]) 
+            status, result = self.clf_service('deletePhase', phase)
+            if (status['CodeMajor'] == 'Success'):
+                phase['id'] = phase['phaseId']
+                status = self.update_clf_info_from_server()
+                if (status['CodeMajor'] == 'Success'):
+                    return {'result': 'success', 'phase_data': phase}
+        return {'result': 'failure', 'phase_data': result}
     
     @XBlock.json_handler
     def indicator_manage(self, data, suffix=''):

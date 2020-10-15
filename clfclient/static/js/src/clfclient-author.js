@@ -46,6 +46,19 @@ function CLFClientXBlock(runtime, element) {
 		//$('#phase_type_calc2').attr('checked', 'checked');
 	}
 	
+	$('#phase_tbody tr td.phase_date').load('click', function() {
+		var date = new Date($(this).html());
+		var today = new Date();
+		if (date.getDate() == today.getDate() && date.getMonth() == today.getMonth() 
+			&& date.getFullYear() == today.getFullYear()) {
+			var h = date.getHours();
+			var m = date.getMinutes();
+			$(this).html((h <= 9 ? "0" + h : h)  + ":" + (h <= 9 ? "0" + m : m));
+		} else {
+			$(this).html(date.getMonth() + "-" + date.getDate() + "-" + date.getFullYear());
+		}
+	});
+	
 	$('#phase_new').bind('click', function() {
 		$('#phase_view').show();
 		$('#clf_tabs').hide();
@@ -55,6 +68,128 @@ function CLFClientXBlock(runtime, element) {
 		$('#phase_edit_send').hide();
 		$('#phase_delete_send').hide();
 		$('#phase_view_error').hide();
+	});
+	
+	var phase_form_fill = function(phase_data) {
+		$('#phase_id').val(phase_data.id);
+		$('#phase_name').val(phase_data.name);
+		$('#phase_start_date').val(phase_data.ini);
+		$('#phase_start_time').val(phase_data.ini.getHours());
+		$('#phase_days_answer').val(parseInt(phase_data.duration0) / 1440);
+		$('#phase_agree_time').val(phase_data.agree.getHours());
+		$('#phase_days_agreement').val(parseInt(phase_data.duration) / 1440);
+		$('#phase_end_time').val(phase_data.agree.getHours());
+		if (phase_data.autoRebuild == "1") {
+			$('#phase_automatic_group').attr('checked', 'checked');
+		} else {
+			$('#phase_automatic_group').removeAttr('checked');
+		}
+	}
+	
+	var phase_edit_function = function() {
+		var handlerUrl = runtime.handlerUrl(element, 'phase_manage');
+		var data = {action: 'view', phase_id: $(this).attr('id'), phase_data: {}};
+		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			$('#phase_view').show();
+			$('#clf_tabs').hide();
+			$('#phase_view_title').html('Edit Phase');
+			phase_form_fill(response.phase_data);
+			$('#phase_new_send').hide();
+			$('#phase_edit_send').show();
+			$('#phase_delete_send').show();
+			$('#phase_view_error').hide();
+		});
+		return false;
+	};
+	$('.phase_edit_link').bind('click', phase_edit_function);
+	
+	var phase_add_row = function(phase_data) {
+		var phase_row = '<td><a href="#" id="' + phase_data.id + 
+			'" class="phase_edit_link" title="Edit"><i class="fas fa-edit"></i></a></td>';
+		$('#phase_tbody tr:first').before(phase_row);
+		$('.phase_edit_link').bind('click', phase_edit_function);
+	}
+	
+	var phase_get_data = function() {
+		var ini = new Date($('#phase_start_date').val() + "T" + $('#phase_start_time').val());
+		var agree = new Date($('#phase_start_date').val() + "T" + $('#phase_start_time').val());
+		agree.setDate(agree.getDate() + parseInt($('#phase_days_answer').val()));
+		var fin = new Date($('#phase_start_date').val() + "T" + $('#phase_end_time').val());
+		fin.setDate(fin.getDate() + (parseInt($('#phase_days_answer').val()) + parseInt($('#phase_days_agreement').val())));
+		var automatic = $('#phase_automatic_start:checked').val() + " " + 
+			$('#phase_automatic_agree:checked').val() + " " + $('#phase_automatic_end:checked').val();
+		var phase_data = {
+			id: $('#phase_id').val(),
+			name: $('#phase_name').val(),
+			type: "H",
+			state: "inactive",
+			ini: ini,
+			agree: agree,
+			fin: fin,
+			automatic: automatic,
+			guideline: ($('#phase_guideline:checked') ? "1" : "0"),
+			scheduleCalc: ($('#phase_schedule_calc:checked') ? "1" : "0"),
+			autoRebuild: ($('#phase_automatic_group:checked') ? "true" : "false"),
+		}
+		return phase_data;
+	}
+	
+	$('#phase_new_send').bind('click', function() {
+		if ($('#phase_form')[0].checkValidity() === false) {
+			return;
+		}
+		var handlerUrl = runtime.handlerUrl(element, 'phase_manage');
+		var data = {action: 'new', phase_id: '', phase_data: phase_get_data()};
+		runtime.notify('save', {state : 'start'});
+		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			if (response.result == 'success') {
+				phase_add_row(response.phase_data);
+				$('#phase_view').hide();
+				$('#clf_tabs').show();
+			} else {
+				$('#phase_view_error').show();
+				$('#phase_view_error').html('Error: ' + response.phase_data.faultstring);
+			}
+			runtime.notify('save', {state : 'end'});
+		});
+	});
+	
+	$('#phase_edit_send').bind('click', function() {
+		if ($('#phase_form')[0].checkValidity() === false) {
+			return;
+		}
+		var handlerUrl = runtime.handlerUrl(element, 'phase_manage');
+		var data = {action: 'edit', phase_id: '', phase_data: phase_get_data()};
+		runtime.notify('save', {state : 'start'});
+		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			if (response.result == 'success') {
+				$('#phase_tbody tr#'+response.phase_data.id).remove();
+				phase_add_row(response.phase_data);
+				$('#phase_view').hide();
+				$('#phase_tabs').show();
+			} else {
+				$('#phase_view_error').show();
+				$('#phase_view_error').html('Error: ' + response.phase_data.faultstring);
+			}
+			runtime.notify('save', {state : 'end'});
+		});
+	});
+	
+	$('#phase_delete_send').bind('click', function() {
+		var handlerUrl = runtime.handlerUrl(element, 'phase_manage');
+		var data = {action: 'delete', phase_id: '', phase_data: phase_get_data()};
+		runtime.notify('save', {state : 'start'});
+		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			if (response.result == 'success') {
+				$('#phase_tbody tr#'+response.phase_data.id).remove();
+				$('#phase_view').hide();
+				$('#clf_tabs').show();
+			} else {
+				$('#phase_view_error').show();
+				$('#phase_view_error').html('Error: ' + response.phase_data.faultstring);
+			}
+			runtime.notify('save', {state : 'end'});
+		});
 	});
 	
 	$('#phase_view_close').bind('click', function() {

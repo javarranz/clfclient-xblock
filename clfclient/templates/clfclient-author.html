@@ -85,16 +85,24 @@
               <th><b>{% trans "Cons. Date" %}</b></th>
               <th><b>{% trans "End Date" %}</b></th>
               <th><b>{% trans "Status" %}</b></th>
+              <th><b>{% trans "Actions" %}</b></th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>John</td>
-              <td>Doe</td>
-              <td>John</td>
-              <td>Doe</td>
-              <td>john@example.com</td>
+          <tbody id="phase_tbody">
+            {% for phase in clf.phases %}
+            <tr id="{{phase.id}}">
+              <td><b>{{phase.name}}</b></td>
+              <td class="phase_date">{{phase.ini}}</td>
+              <td class="phase_date">{{phase.agree}}</td>
+              <td class="phase_date">{{phase.fin}}</td>
+              <td>{{phase.state}}</td>
+              <td>
+                <a href="#" id="{{phase.id}}" class="phase_edit_link" title='{% trans "Edit" %}'>
+                  <i class='fas fa-edit'></i>
+                </a>
+              </td>
             </tr>
+            {% endfor %}
           </tbody>
         </table>
       </div>
@@ -111,13 +119,12 @@
             <div class="modal-body" id="phase_view_body">
               <form id="phase_form" class="was-validated">
                 <input type="hidden" id="phase_id">
-                <input type="hidden" id="phase_weka_model">
                 <div class="form-group row">
                   <label for="phase_name" class="col-sm-3 col-form-label">
                     {% trans "Name" %}
                   </label>
                   <div class="col-sm-9">
-                    <input class="form-control" id="phase_name" type="text" required>
+                    <input class="form-control" id="phase_name" type="text" required value="New Phase Name">
                   </div>
                 </div>
                 <div class="form-group row">
@@ -141,7 +148,7 @@
                     {% trans "Days for Answer Stage" %}
                   </label>
                   <div class="col-sm-9">
-                    <input class="form-control" id="phase_days_answer" type="number" value="5" required>
+                    <input class="form-control" id="phase_days_answer" type="number" value="{{clf.numDaysAnswer}}" required>
                     <i class="form-text text-muted">
                       {% trans "Number of days from the Start to the Agreement Stage" %}
                     </i>
@@ -159,11 +166,11 @@
                   </div>
                 </div>
                 <div class="form-group row">
-                  <label for="phase_days_answer" class="col-sm-3 col-form-label">
+                  <label for="phase_days_agreement" class="col-sm-3 col-form-label">
                     {% trans "Days for Agreement Stage" %}
                   </label>
                   <div class="col-sm-9">
-                    <input class="form-control" id="phase_days_answer" type="number" value="2" required>
+                    <input class="form-control" id="phase_days_agreement" type="number" value="{{clf.numDaysConsensus}}" required>
                     <i class="form-text text-muted">
                       {% trans "Number of days from the Agreement Stage to the End" %}
                     </i>
@@ -187,32 +194,68 @@
                   <div class="col-sm-9">
                     <div class="form-check">
                       <label class="col-form-label">
-                        <input class="form-check-input" id="phase_automatic_start" type="checkbox" checked>
+                        <input class="form-check-input" id="phase_automatic_start" type="checkbox" value="0" checked>
                         {% trans "Start Date" %}
                       </label>
                     </div>
                     <div class="form-check">
                       <label class="col-form-label">
-                        <input class="form-check-input" id="phase_automatic_agree" type="checkbox" checked>
+                        <input class="form-check-input" id="phase_automatic_agree" type="checkbox" value="1" checked>
                         {% trans "Agreement Date" %}
                       </label>
                     </div>
                     <div class="form-check">
                       <label class="col-form-label">
-                        <input class="form-check-input" id="phase_automatic_end" type="checkbox" checked>
+                        <input class="form-check-input" id="phase_automatic_end" type="checkbox" value="2" checked>
                         {% trans "End Date" %}
                       </label>
                     </div>
                   </div>
                 </div>
                 <div class="form-group row">
-                  <label for="phase_automatic" class="col-sm-3 col-form-label">
+                  <label for="phase_automatic_group" class="col-sm-3 col-form-label">
                     {% trans "Automatic Group Building" %}
                   </label>
                   <div class="col-sm-9">
                     <div class="form-check">
                       <label class="col-form-label">
-                        <input class="form-check-input" id="phase_automatic_group" type="checkbox">
+                        <input class="form-check-input" id="phase_automatic_group" value="1" type="checkbox">
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group row" 
+                  {% if clf.scheduleCalc == 'false' %} 
+                    style="display:none"
+                  {% endif  %}>
+                  <label for="phase_schedule_calc" class="col-sm-3 col-form-label">
+                    {% trans "Scheduled Profile Calculation" %}
+                  </label>
+                  <div class="col-sm-9" >
+                    <div class="form-check">
+                      <label class="col-form-label">
+                        <input class="form-check-input" id="phase_schedule_calc" value="1" type="checkbox"
+                          {% if clf.scheduleCalc == 'true' %} 
+                            checked
+                          {% endif  %}>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group row"
+                  {% if clf.proposedAnswer == 'false' %} 
+                    style="display:none"
+                  {% endif  %}>
+                  <label for="phase_guideline" class="col-sm-3 col-form-label">
+                    {% trans "Guideline Allowed" %}
+                  </label>
+                  <div class="col-sm-9">
+                    <div class="form-check">
+                      <label class="col-form-label">
+                        <input class="form-check-input" id="phase_guideline" value="1" type="checkbox"
+                          {% if clf.proposedAnswer == 'true' %} 
+                            checked
+                          {% endif  %}>
                       </label>
                     </div>
                   </div>
@@ -239,7 +282,7 @@
     </div>
     <div id="groups_div" class="container tab-pane"><br>
       <label><strong>{% trans "Groups" %}</strong></label>
-      <p>{% for x in self.clf.indicators %}<p>{{x}}</p>{% endfor %}</p>
+      <p>{% for x in dj_users %}<p>{{x.username}}</p>{% endfor %}</p>
     </div>
     <div id="parameters_div" class="container tab-pane"><br>
       <label><strong>{% trans "Parameters List" %}</strong></label>
