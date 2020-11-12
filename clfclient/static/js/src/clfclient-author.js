@@ -1,42 +1,6 @@
 function CLFClientXBlock(runtime, element) {
 
 	///////////////////////////////////////////////////////////////////////////////
-	// GENERAL TABS
-	///////////////////////////////////////////////////////////////////////////////
-	
-	$('#clf_tab').bind('click', function() {
-		$('.clf_tab').removeClass('active');
-		$(this).addClass('active');
-		$('div.tab-pane').removeClass('active');
-		$('#clf_div').addClass('active');
-		return false;
-	});	
-	
-	$('#groups_tab').bind('click', function() {
-		$('.clf_tab').removeClass('active');
-		$(this).addClass('active');
-		$('div.tab-pane').removeClass('active');
-		$('#groups_div').addClass('active');
-		return false;
-	});
-	
-	$('#parameters_tab').bind('click', function() {
-		$('.clf_tab').removeClass('active');
-		$(this).addClass('active');
-		$('div.tab-pane').removeClass('active');
-		$('#parameters_div').addClass('active');
-		return false;
-	});
-	
-	$('#indicators_tab').bind('click', function() {
-		$('.clf_tab').removeClass('active');
-		$(this).addClass('active');
-		$('div.tab-pane').removeClass('active');
-		$('#indicators_div').addClass('active');
-		return false;
-	});
-	
-	///////////////////////////////////////////////////////////////////////////////
 	// CLF PHASES TASKS
 	///////////////////////////////////////////////////////////////////////////////
 	
@@ -46,18 +10,18 @@ function CLFClientXBlock(runtime, element) {
 		//$('#phase_type_calc2').attr('checked', 'checked');
 	}
 	
-	$('#phase_tbody tr td.phase_date').load('click', function() {
-		var date = new Date($(this).html());
+	var format_date = function(date_string) {
+		var date = new Date(date_string);
 		var today = new Date();
 		if (date.getDate() == today.getDate() && date.getMonth() == today.getMonth() 
 			&& date.getFullYear() == today.getFullYear()) {
 			var h = date.getHours();
 			var m = date.getMinutes();
-			$(this).html((h <= 9 ? "0" + h : h)  + ":" + (h <= 9 ? "0" + m : m));
+			return (h <= 9 ? "0" + h : h)  + ":" + (h <= 9 ? "0" + m : m);
 		} else {
-			$(this).html(date.getMonth() + "-" + date.getDate() + "-" + date.getFullYear());
+			return (date.getMonth() + 1) + "-" + date.getDate() + "-" + date.getFullYear();
 		}
-	});
+	};
 	
 	$('#phase_new').bind('click', function() {
 		$('#phase_view').show();
@@ -70,44 +34,70 @@ function CLFClientXBlock(runtime, element) {
 		$('#phase_view_error').hide();
 	});
 	
+	var phase_table_fill = function() {
+		var handlerUrl = runtime.handlerUrl(element, 'phase_manage');
+		var data = {action: 'list', phase_id: '', phase_data: {}};
+		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			var phases_data = response.phase_data;
+			var phase_tbody = '';
+			for (phase_data of phases_data) {
+				var phase_row = '<tr id="' + phase_data.id + '">' +
+			      '<td><b>' + phase_data.name + '</b></td>' +
+			      '<td class="phase_date">' + format_date(phase_data.ini) + '</td>' +
+			      '<td class="phase_date">' + format_date(phase_data.agree) + '</td>' +
+			      '<td class="phase_date">' + format_date(phase_data.fin) + '</td>' +
+			      '<td>' + phase_data.state + '</td>';
+				phase_row += '<td style="width:70px">';
+				phase_row += '<a href="#" id="' + phase_data.id + '"';
+				phase_row += ' class="phase_edit_link" title="Edit"><i class="fas fa-edit"></i></a>';
+				phase_row += '</td></tr>';
+				phase_tbody += phase_row;
+			}
+			$('#phase_tbody').html(phase_tbody);
+			$('.phase_edit_link').bind('click', function() {
+				var handlerUrl = runtime.handlerUrl(element, 'phase_manage');
+				var data = {action: 'view', phase_id: $(this).attr('id'), phase_data: {}};
+				$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+					$('#phase_view').show();
+					$('#clf_tabs').hide();
+					$('#phase_view_title').html('Edit Phase');
+					phase_form_fill(response.phase_data);
+					$('#phase_new_send').hide();
+					$('#phase_edit_send').show();
+					$('#phase_delete_send').show();
+					$('#phase_view_error').hide();
+				});
+				return false;
+			});
+		});
+	}
+	$('#phase_tbody').ready(phase_table_fill);
+	
 	var phase_form_fill = function(phase_data) {
 		$('#phase_id').val(phase_data.id);
 		$('#phase_name').val(phase_data.name);
-		$('#phase_start_date').val(phase_data.ini);
-		$('#phase_start_time').val(phase_data.ini.getHours());
-		$('#phase_days_answer').val(parseInt(phase_data.duration0) / 1440);
-		$('#phase_agree_time').val(phase_data.agree.getHours());
-		$('#phase_days_agreement').val(parseInt(phase_data.duration) / 1440);
-		$('#phase_end_time').val(phase_data.agree.getHours());
+		var ini = new Date(phase_data.ini);
+		var iniday = ("0" + ini.getDate()).slice(-2);
+		var inimonth = ("0" + (ini.getMonth() + 1)).slice(-2);
+		var inihours = ("0" + ini.getHours()).slice(-2);
+		var inimins = ("0" + ini.getMinutes()).slice(-2);
+		$('#phase_start_date').val(ini.getFullYear() + "-" + inimonth + "-" + iniday);
+		$('#phase_start_time').val(inihours + ":" + inihours);
+		$('#phase_days_answer').val(parseInt(parseInt(phase_data.duration0) / 1440));
+		var agree = new Date(phase_data.agree);
+		var agreehours = ("0" + agree.getHours()).slice(-2);
+		var agreemins = ("0" + agree.getMinutes()).slice(-2);
+		$('#phase_agree_time').val(agreehours + ":" + agreemins);
+		$('#phase_days_agreement').val(parseInt(parseInt(phase_data.duration) / 1440));
+		var fin = new Date(phase_data.fin);
+		var finhours = ("0" + fin.getHours()).slice(-2);
+		var finmins = ("0" + fin.getMinutes()).slice(-2);
+		$('#phase_end_time').val(finhours + ":" + finmins);
 		if (phase_data.autoRebuild == "1") {
 			$('#phase_automatic_group').attr('checked', 'checked');
 		} else {
 			$('#phase_automatic_group').removeAttr('checked');
 		}
-	}
-	
-	var phase_edit_function = function() {
-		var handlerUrl = runtime.handlerUrl(element, 'phase_manage');
-		var data = {action: 'view', phase_id: $(this).attr('id'), phase_data: {}};
-		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
-			$('#phase_view').show();
-			$('#clf_tabs').hide();
-			$('#phase_view_title').html('Edit Phase');
-			phase_form_fill(response.phase_data);
-			$('#phase_new_send').hide();
-			$('#phase_edit_send').show();
-			$('#phase_delete_send').show();
-			$('#phase_view_error').hide();
-		});
-		return false;
-	};
-	$('.phase_edit_link').bind('click', phase_edit_function);
-	
-	var phase_add_row = function(phase_data) {
-		var phase_row = '<td><a href="#" id="' + phase_data.id + 
-			'" class="phase_edit_link" title="Edit"><i class="fas fa-edit"></i></a></td>';
-		$('#phase_tbody tr:first').before(phase_row);
-		$('.phase_edit_link').bind('click', phase_edit_function);
 	}
 	
 	var phase_get_data = function() {
@@ -131,6 +121,7 @@ function CLFClientXBlock(runtime, element) {
 			scheduleCalc: ($('#phase_schedule_calc:checked') ? "1" : "0"),
 			autoRebuild: ($('#phase_automatic_group:checked') ? "true" : "false"),
 		}
+		console.log(JSON.stringify(phase_data));
 		return phase_data;
 	}
 	
@@ -143,7 +134,7 @@ function CLFClientXBlock(runtime, element) {
 		runtime.notify('save', {state : 'start'});
 		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
 			if (response.result == 'success') {
-				phase_add_row(response.phase_data);
+				phase_table_fill();
 				$('#phase_view').hide();
 				$('#clf_tabs').show();
 			} else {
@@ -163,10 +154,9 @@ function CLFClientXBlock(runtime, element) {
 		runtime.notify('save', {state : 'start'});
 		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
 			if (response.result == 'success') {
-				$('#phase_tbody tr#'+response.phase_data.id).remove();
-				phase_add_row(response.phase_data);
+				phase_table_fill();
 				$('#phase_view').hide();
-				$('#phase_tabs').show();
+				$('#clf_tabs').show();
 			} else {
 				$('#phase_view_error').show();
 				$('#phase_view_error').html('Error: ' + response.phase_data.faultstring);
@@ -233,75 +223,6 @@ function CLFClientXBlock(runtime, element) {
 		$('#ind_type_calc2').attr('checked', 'checked');
 	}
 	
-	$('.ind_view_link').bind('click', function() {
-		var handlerUrl = runtime.handlerUrl(element, 'indicator_manage');
-		var data = {action: 'view', ind_id: $(this).attr('id'), ind_data: {}};
-		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
-			$('#ind_view').show();
-			$('#ind_tabs').hide();
-			$('#ind_view_title').html('View Indicator');
-			ind_form_fill(response.ind_data);
-			$('#ind_new_send').hide();
-			$('#ind_edit_send').hide();
-			$('#ind_delete_send').hide();
-			$('#ind_view_error').hide();
-		});
-		return false;
-	});
-	
-	var ind_rules_funtion = function() {
-		var handlerUrl = runtime.handlerUrl(element, 'indicator_manage');
-		var data = {action: 'toggle_calc', ind_id: $(this).attr('id'), ind_data: {'typeCalculation': 1}};
-		runtime.notify('save', {state : 'start'});
-		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
-			var id = response.ind_data.ind_id;
-			$('#' + id + '.ind_calc').attr({"title" : "Weka Calculation"});
-			$('#' + id + '.ind_calc').html("<i class='fab fa-weebly'></i>");
-			$('#' + id + '.ind_calc').addClass('ind_weka_link');
-			$('#' + id + '.ind_calc').removeClass('ind_rules_link');
-			$('#' + id + '.ind_calc').unbind('click');
-			$('#' + id + '.ind_calc').bind('click', ind_weka_function);
-			runtime.notify('save', {state : 'end'});
-		});
-		return false;
-	};
-	$('.ind_rules_link').bind('click', ind_rules_funtion);
-	
-	var ind_weka_function = function() {
-		var handlerUrl = runtime.handlerUrl(element, 'indicator_manage');
-		var data = {action: 'toggle_calc', ind_id: $(this).attr('id'), ind_data: {'typeCalculation': 0}};
-		runtime.notify('save', {state : 'start'});
-		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
-			var id = response.ind_data.ind_id;
-			$('#' + id + '.ind_calc').attr({"title" : "Muanual Rules"});
-			$('#' + id + '.ind_calc').html("<i class='far fa-hand-paper'></i>");
-			$('#' + id + '.ind_calc').addClass('ind_rules_link');
-			$('#' + id + '.ind_calc').removeClass('ind_weka_link');
-			$('#' + id + '.ind_calc').unbind('click');
-			$('#' + id + '.ind_calc').bind('click', ind_rules_funtion);
-			runtime.notify('save', {state : 'end'});
-		});
-		return false;
-	};
-	$('.ind_weka_link').bind('click', ind_weka_function);
-	
-	var ind_edit_function = function() {
-		var handlerUrl = runtime.handlerUrl(element, 'indicator_manage');
-		var data = {action: 'view', ind_id: $(this).attr('id'), ind_data: {}};
-		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
-			$('#ind_view').show();
-			$('#ind_tabs').hide();
-			$('#ind_view_title').html('Edit Indicator');
-			ind_form_fill(response.ind_data);
-			$('#ind_new_send').hide();
-			$('#ind_edit_send').show();
-			$('#ind_delete_send').show();
-			$('#ind_view_error').hide();
-		});
-		return false;
-	};
-	$('.ind_edit_link').bind('click', ind_edit_function);
-	
 	$('#ind_new').bind('click', function() {
 		$('#ind_view').show();
 		$('#ind_tabs').hide();
@@ -313,37 +234,107 @@ function CLFClientXBlock(runtime, element) {
 		$('#ind_view_error').hide();
 	});
 	
-	var ind_add_row = function(ind_data) {
-		var ind_row = '<tr class=';
-		if (ind_data.type == '0') {
-			ind_row += 'Active';
-		} else {
-			ind_row += 'Passive';
-		}
-		ind_row += " id=" + ind_data.id + '>' +
-	      '<td>' + ind_data.name + '</td>' +
-	      '<td>' + ind_data.description + '</td>';
-		if (ind_data.type == '0') {
-			ind_row += '<td>Active</td>';
-		} else if (ind_data.target == '1') {
-			ind_row += '<td>Passive</td>';
-		} 
-		ind_row += '<td style="width:70px">';
-		ind_row += '<a href="#" id="' + ind_data.id + '" class="ind_edit_link" title="Edit">' + 
-			'<i class="fas fa-edit"></i>&nbsp;</a>&nbsp;';
-		ind_row += '<a href="#" id="' + ind_data.id + '" class="ind_params_link" title="Parameters">' + 
-			'<i class="fas fa-chart-bar"></i>&nbsp;</a>&nbsp;';
-		if (ind_data.typeCalculation == '1') {
-			ind_row += '<a href="#" id="' + ind_data.id + '" class="ind_rules_link" title="Muanual Rules">' + 
-			'<i class="far fa-hand-paper"></i>&nbsp;</a>';
-		} else {
-			ind_row += '<a href="#" id="' + ind_data.id + '" class="ind_weka_link" title="Weka Calculation">' + 
-			'<i class="fab fa-weebly"></i>&nbsp;</a>';
-		}
-		ind_row += '</td></tr>';
-		$('#ind_tbody tr:first').before(ind_row);
-		$('.ind_edit_link').bind('click', ind_edit_function);
+	var ind_table_fill = function() {
+		var handlerUrl = runtime.handlerUrl(element, 'indicator_manage');
+		var data = {action: 'list', ind_id: '', ind_data: {}};
+		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			var inds_data = response.ind_data;
+			var ind_tbody = '';
+			for (ind_data of inds_data) {
+				var ind_row = '<tr class=';
+				if (ind_data.type == '0') {
+					ind_row += 'Active';
+				} else {
+					ind_row += 'Passive';
+				}
+				ind_row += " id=" + ind_data.id + '>' +
+			      '<td>' + ind_data.name + '</td>' +
+			      '<td>' + ind_data.description + '</td>';
+				if (ind_data.type == '0') {
+					ind_row += '<td>Active</td>';
+				} else {
+					ind_row += '<td>Passive</td>';
+				} 
+				ind_row += '<td style="width:70px">';
+				ind_row += '<a href="#" id="' + ind_data.id + '"';
+				if (ind_data.indicatorClass == "S") {
+					ind_row += ' class="ind_view_link" title="View"><i class="fas fa-search"></i></a>';
+				} else {
+					ind_row += ' class="ind_edit_link" title="Edit"><i class="fas fa-edit"></i></a>';
+				}
+				ind_row += '&nbsp;<a href="#" id="' + ind_data.id + '" class="ind_params_link"' +
+					' title="Parameters"><i class="fas fa-chart-bar"></i></a>&nbsp;';
+				if (ind_data.typeCalculation == '1') {
+					ind_row += '<a href="#" id="' + ind_data.id + '" class="ind_rules_link"' +
+						' title="Muanual Rules"><i class="far fa-hand-paper"></i></a>';
+				} else {
+					ind_row += '<a href="#" id="' + ind_data.id + '" class="ind_weka_link"' +
+						' title="Weka Calculation"><i class="fab fa-weebly"></i></a>';
+				}
+				ind_row += '</td></tr>';
+				ind_tbody += ind_row;
+			}
+			if ($('.Passive').is(":visible")){
+				var active_tab = '#ind_passive_tab';
+			} else {
+				var active_tab = '#ind_active_tab';
+			}
+			$('#ind_tbody').html(ind_tbody);
+			$(active_tab).trigger('click');
+			$('.ind_view_link').bind('click', function() {
+				var handlerUrl = runtime.handlerUrl(element, 'indicator_manage');
+				var data = {action: 'view', ind_id: $(this).attr('id'), ind_data: {}};
+				$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+					$('#ind_view').show();
+					$('#ind_tabs').hide();
+					$('#ind_view_title').html('View Indicator');
+					ind_form_fill(response.ind_data);
+					$('#ind_new_send').hide();
+					$('#ind_edit_send').hide();
+					$('#ind_delete_send').hide();
+					$('#ind_view_error').hide();
+				});
+				return false;
+			});
+			$('.ind_edit_link').bind('click', function() {
+				var handlerUrl = runtime.handlerUrl(element, 'indicator_manage');
+				var data = {action: 'view', ind_id: $(this).attr('id'), ind_data: {}};
+				$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+					$('#ind_view').show();
+					$('#ind_tabs').hide();
+					$('#ind_view_title').html('Edit Indicator');
+					ind_form_fill(response.ind_data);
+					$('#ind_new_send').hide();
+					$('#ind_edit_send').show();
+					$('#ind_delete_send').show();
+					$('#ind_view_error').hide();
+				});
+				return false;
+			});
+			$('.ind_rules_link').bind('click', function() {
+				var handlerUrl = runtime.handlerUrl(element, 'indicator_manage');
+				var data = {action: 'toggle_calc', ind_id: $(this).attr('id'), ind_data: {'typeCalculation': 1}};
+				runtime.notify('save', {state : 'start'});
+				$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+					ind_table_fill();
+					runtime.notify('save', {state : 'end'});
+				});
+				return false;
+			});
+			$('.ind_weka_link').bind('click', function() {
+				var handlerUrl = runtime.handlerUrl(element, 'indicator_manage');
+				var data = {action: 'toggle_calc', ind_id: $(this).attr('id'), ind_data: {'typeCalculation': 0}};
+				runtime.notify('save', {state : 'start'});
+				$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+					ind_table_fill();
+					runtime.notify('save', {state : 'end'});
+				});
+				return false;
+			});
+		});
+		
 	}
+	$('#ind_tbody').ready(ind_table_fill);
 	
 	var ind_get_data = function() {
 		var ind_data = {
@@ -355,7 +346,6 @@ function CLFClientXBlock(runtime, element) {
 			manualRule: $('#ind_manual_rule').val(),
 			typeCalculation: $('input[name="ind_type_calc"]:checked').val()
 		}
-		//console.log($('input[name="ind_type_calc"]:checked').val()); 
 		return ind_data;
 	}
 	
@@ -368,7 +358,7 @@ function CLFClientXBlock(runtime, element) {
 		runtime.notify('save', {state : 'start'});
 		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
 			if (response.result == 'success') {
-				ind_add_row(response.ind_data);
+				ind_table_fill();
 				$('#ind_view').hide();
 				$('#ind_tabs').show();
 			} else {
@@ -389,7 +379,7 @@ function CLFClientXBlock(runtime, element) {
 		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
 			if (response.result == 'success') {
 				$('#ind_tbody tr#'+response.ind_data.id).remove();
-				ind_add_row(response.ind_data);
+				ind_table_fill();
 				$('#ind_view').hide();
 				$('#ind_tabs').show();
 			} else {
@@ -421,7 +411,6 @@ function CLFClientXBlock(runtime, element) {
 		$('#ind_view').hide();
 		$('#ind_tabs').show();
 	});
-	
 	
 	///////////////////////////////////////////////////////////////////////////////
 	// PARAMETERS
@@ -459,39 +448,6 @@ function CLFClientXBlock(runtime, element) {
 		$('#param_form textarea').html("");
 	}
 	
-	$('.param_view_link').bind('click', function() {
-		var handlerUrl = runtime.handlerUrl(element, 'parameter_manage');
-		var data = {action: 'view', param_id: $(this).attr('id'), param_data: {}};
-		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
-			$('#param_view').show();
-			$('#param_tabs').hide();
-			$('#param_view_title').html('View Parameter');
-			param_form_fill(response.param_data);
-			$('#param_new_send').hide();
-			$('#param_edit_send').hide();
-			$('#param_delete_send').hide();
-			$('#param_view_error').hide();
-		});
-		return false;
-	});
-	
-	var param_edit_function = function() {
-		var handlerUrl = runtime.handlerUrl(element, 'parameter_manage');
-		var data = {action: 'view', param_id: $(this).attr('id'), param_data: {}};
-		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
-			$('#param_view').show();
-			$('#param_tabs').hide();
-			$('#param_view_title').html('Edit Parameter');
-			param_form_fill(response.param_data);
-			$('#param_new_send').hide();
-			$('#param_edit_send').show();
-			$('#param_delete_send').show();
-			$('#param_view_error').hide();
-		});
-		return false;
-	};
-	$('.param_edit_link').bind('click', param_edit_function);
-	
 	$('#param_new').bind('click', function() {
 		$('#param_view').show();
 		$('#param_tabs').hide();
@@ -503,25 +459,76 @@ function CLFClientXBlock(runtime, element) {
 		$('#param_view_error').hide();
 	});
 	
-	var param_add_row = function(param_data) {
-		var param_row = '<tr class=' + param_data.metricType + " id=" + param_data.id + '>' +
-	      '<td><b>'+ param_data.metricAlias + '</b></td>' +
-	      '<td>' + param_data.name + '</td>' +
-	      '<td>' + param_data.description + '</td>';
-		if (param_data.target == '0') {
-			param_row += '<td>Versions</td>';
-		} else if (param_data.target == '1') {
-			param_row += '<td>Forums</td>';
-		} else if (param_data.target == '2') {
-			param_row += '<td>Ratings</td>';
-		} else if (param_data.target == '3') {
-			param_row += '<td>Generic</td>';
-		} 
-		param_row += '<td><a href="#" id="' + param_data.id + '" class="param_edit_link" title="Edit">' + 
-			'<i class="fas fa-edit"></i></a></td></tr>';
-		$('#param_tbody tr:first').before(param_row);
-		$('.param_edit_link').bind('click', param_edit_function);
+	var param_table_fill = function() {
+		var handlerUrl = runtime.handlerUrl(element, 'parameter_manage');
+		var data = {action: 'list', param_id: '', param_data: {}};
+		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			var params_data = response.param_data;
+			var param_tbody = '';
+			for (param_data of params_data) {
+				var param_row = '<tr class=' + param_data.metricType + " id=" + param_data.id + '>' +
+			      '<td><b>'+ param_data.metricAlias + '</b></td>' +
+			      '<td>' + param_data.name + '</td>' +
+			      '<td>' + param_data.description + '</td>';
+				if (param_data.target == '0') {
+					param_row += '<td>Versions</td>';
+				} else if (param_data.target == '1') {
+					param_row += '<td>Forums</td>';
+				} else if (param_data.target == '2') {
+					param_row += '<td>Ratings</td>';
+				} else if (param_data.target == '3') {
+					param_row += '<td>Generic</td>';
+				} 
+				param_row += '<td><a href="#" id="' + param_data.id + '"';
+				if (param_data.parameterClass == 'S') {
+					param_row += ' class="param_view_link" title="View"><i class="fas fa-search"></i>';
+				} else {
+					param_row += ' class="param_edit_link" title="Edit"><i class="fas fa-edit"></i>';
+				}
+				param_row += '</a></td></tr>';
+				param_tbody += param_row;
+			}
+			if ($('.Passive').is(":visible")){
+				var active_tab = '#param_passive_tab';
+			} else {
+				var active_tab = '#param_active_tab';
+			}
+			$('#param_tbody').html(param_tbody);
+			$(active_tab).trigger('click');
+			$('.param_view_link').bind('click', function() {
+				var handlerUrl = runtime.handlerUrl(element, 'parameter_manage');
+				var data = {action: 'view', param_id: $(this).attr('id'), param_data: {}};
+				$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+					$('#param_view').show();
+					$('#param_tabs').hide();
+					$('#param_view_title').html('View Parameter');
+					param_form_fill(response.param_data);
+					$('#param_new_send').hide();
+					$('#param_edit_send').hide();
+					$('#param_delete_send').hide();
+					$('#param_view_error').hide();
+				});
+				return false;
+			});
+			$('.param_edit_link').bind('click', function() {
+				var handlerUrl = runtime.handlerUrl(element, 'parameter_manage');
+				var data = {action: 'view', param_id: $(this).attr('id'), param_data: {}};
+				$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+					$('#param_view').show();
+					$('#param_tabs').hide();
+					$('#param_view_title').html('Edit Parameter');
+					param_form_fill(response.param_data);
+					$('#param_new_send').hide();
+					$('#param_edit_send').show();
+					$('#param_delete_send').show();
+					$('#param_view_error').hide();
+				});
+				return false;
+			});
+		});
+		
 	}
+	$('#param_tbody').ready(param_table_fill);
 	
 	var param_get_data = function() {
 		var param_data = {
@@ -546,7 +553,7 @@ function CLFClientXBlock(runtime, element) {
 		runtime.notify('save', {state : 'start'});
 		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
 			if (response.result == 'success') {
-				param_add_row(response.param_data);
+				param_table_fill();
 				$('#param_view').hide();
 				$('#param_tabs').show();
 			} else {
@@ -567,7 +574,7 @@ function CLFClientXBlock(runtime, element) {
 		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
 			if (response.result == 'success') {
 				$('#param_tbody tr#'+response.param_data.id).remove();
-				param_add_row(response.param_data);
+				param_table_fill();
 				$('#param_view').hide();
 				$('#param_tabs').show();
 			} else {
@@ -598,6 +605,42 @@ function CLFClientXBlock(runtime, element) {
 	$('#param_view_close').bind('click', function() {
 		$('#param_view').hide();
 		$('#param_tabs').show();
+	});
+	
+	///////////////////////////////////////////////////////////////////////////////
+	// GENERAL TABS
+	///////////////////////////////////////////////////////////////////////////////
+	
+	$('#clf_tab').bind('click', function() {
+		$('.clf_tab').removeClass('active');
+		$(this).addClass('active');
+		$('div.tab-pane').removeClass('active');
+		$('#clf_div').addClass('active');
+		return false;
+	});	
+	
+	$('#groups_tab').bind('click', function() {
+		$('.clf_tab').removeClass('active');
+		$(this).addClass('active');
+		$('div.tab-pane').removeClass('active');
+		$('#groups_div').addClass('active');
+		return false;
+	});
+	
+	$('#parameters_tab').bind('click', function() {
+		$('.clf_tab').removeClass('active');
+		$(this).addClass('active');
+		$('div.tab-pane').removeClass('active');
+		$('#parameters_div').addClass('active');
+		return false;
+	});
+	
+	$('#indicators_tab').bind('click', function() {
+		$('.clf_tab').removeClass('active');
+		$(this).addClass('active');
+		$('div.tab-pane').removeClass('active');
+		$('#indicators_div').addClass('active');
+		return false;
 	});
 
 /*	$(element).find('.cancel-button').bind('click', function() {

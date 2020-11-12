@@ -32,7 +32,7 @@
         </h3>
         <div style="float:left">
           <ul>
-            <li><strong>{% trans "Created by: " %}</strong>{{user}}</li>
+            <li><strong>{% trans "Created by: " %}</strong>{{current_user}}</li>
             <li><strong>{% trans "Name: " %}</strong>{{clf.name}}</li>
             <li><strong>{% trans "Description: " %}</strong>{{clf.description}}</li>
             <li>
@@ -88,22 +88,7 @@
               <th><b>{% trans "Actions" %}</b></th>
             </tr>
           </thead>
-          <tbody id="phase_tbody">
-            {% for phase in clf.phases %}
-            <tr id="{{phase.id}}">
-              <td><b>{{phase.name}}</b></td>
-              <td class="phase_date">{{phase.ini}}</td>
-              <td class="phase_date">{{phase.agree}}</td>
-              <td class="phase_date">{{phase.fin}}</td>
-              <td>{{phase.state}}</td>
-              <td>
-                <a href="#" id="{{phase.id}}" class="phase_edit_link" title='{% trans "Edit" %}'>
-                  <i class='fas fa-edit'></i>
-                </a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
+          <tbody id="phase_tbody"></tbody>
         </table>
       </div>
       </div>
@@ -282,7 +267,8 @@
     </div>
     <div id="groups_div" class="container tab-pane"><br>
       <label><strong>{% trans "Groups" %}</strong></label>
-      <p>{% for x in dj_users %}<p>{{x.username}}</p>{% endfor %}</p>
+      <p>{% for x in self.students %}<p>{{x}}</p>{% endfor %}</p>
+      <b>{{self.students}}</b>
     </div>
     <div id="parameters_div" class="container tab-pane"><br>
       <label><strong>{% trans "Parameters List" %}</strong></label>
@@ -314,34 +300,7 @@
 	              <th><b>{% trans "Actions" %}</b></th>
 	            </tr>
 	          </thead>
-	          <tbody id="param_tbody">
-	          	{% for param in clf.parameters %}
-	            <tr class="{{param.metricType}}" id="{{param.id}}"
-                  {% if param.metricType == "Passive" %} style='display: none' {% endif %}>
-	              <td><b>{% trans param.metricAlias %}</b></td>
-	              <td>{% trans param.name %}</td>
-	              <td>{% trans param.description %}</td>
-	              <td>
-	              	{% if param.target == "0" %} {% trans "Versions" %}
-	              	{% elif param.target == "1" %} {% trans "Forums" %}
-	              	{% elif param.target == "2" %} {% trans "Ratings" %}
-	              	{% elif param.target == "3" %} {% trans "Generic" %}
-	              	{% endif %}
-	              </td>
-	              <td>
-                    {% if param.parameterClass == "S" %}
-    	              	<a href="#" id="{{param.id}}" class="param_view_link" title='{% trans "View" %}'>
-    	              		<i class='fas fa-search'></i> 
-    	              	</a>
-                    {% else %} 
-                        <a href="#" id="{{param.id}}" class="param_edit_link" title='{% trans "Edit" %}'>
-                          <i class='fas fa-edit'></i>
-                        </a>
-                    {% endif %}
-	              </td>
-	            </tr>
-	            {% endfor %}
-	          </tbody>
+	          <tbody id="param_tbody"></tbody>
 	        </table>
 	      </div>
       </div>
@@ -484,45 +443,7 @@
                 <th><b>{% trans "Actions" %}</b></th>
               </tr>
             </thead>
-            <tbody id="ind_tbody">
-              {% for ind in clf.indicators %}
-              <tr class="{% if ind.type == '0' %}Active{% else %}Passive{% endif %}" id="{{ind.id}}"
-                  {% if ind.type == "1" %} style='display: none' {% endif %}>
-                <td>{% trans ind.name %}</td>
-                <td>{% trans ind.description %}</td>
-                <td>
-                  {% if ind.type == "0" %} 
-                    <span>{% trans "Active" %}</span> 
-                  {% else %} 
-                    <span>{% trans "Passive" %}</span> 
-                  {% endif %}
-                </td>
-                <td style="width:70px">
-                    {% if ind.indicatorClass == "S" %}
-                      <a href="#" id="{{ind.id}}" class="ind_view_link" title='{% trans "View" %}'>
-                        <i class='fas fa-search'></i>
-                      </a>&nbsp; 
-                    {% else %} 
-                        <a href="#" id="{{ind.id}}" class="ind_edit_link" title='{% trans "Edit" %}'>
-                          <i class='fas fa-edit'></i>
-                        </a>&nbsp; 
-                    {% endif %}
-                    <a href="#" id="{{ind.id}}" class="ind_params_link" title='{% trans "Parameters" %}'>
-                      <i class='fas fa-chart-bar'></i>
-                    </a>&nbsp; 
-                    {% if ind.typeCalculation == "1" %}
-                      <a href="#" id="{{ind.id}}" class="ind_calc ind_rules_link" title='{% trans "Muanual Rules" %}'>
-                        <i class='far fa-hand-paper'></i>
-                      </a>&nbsp; 
-                    {% else %} 
-                        <a href="#" id="{{ind.id}}" class="ind_calc ind_weka_link" title='{% trans "Weka Calculation" %}'>
-                          <i class='fab fa-weebly'></i>
-                        </a>
-                    {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
+            <tbody id="ind_tbody"></tbody>
           </table>
         </div>
       </div>
@@ -571,7 +492,7 @@
                     {% trans "Manual Rule" %}
                   </label>
                   <div class="col-sm-9">
-                    <input class="form-control" id="ind_manual_rule" type="text" required>
+                    <input class="form-control" id="ind_manual_rule" type="number" required>
                     <i id="emailHelp" class="form-text text-muted">
                       {% trans "Represents the number of positive metrics to take into account for the manual classification" %}
                     </i>
@@ -643,4 +564,5 @@
   </table>
 </div>
 {% endif %}
-<div><h3>{{self.packageUUID}}-{{self.packageId}}-{{self.clfId}}</h3></div>
+<div><h3>PCK_UUID: <b>{{self.packageUUID}}</b>, PCK_ID: <b>{{self.packageId}}</b>, CLF_ID: <b>{{self.clfId}}</b></h3></div>
+<div><h3>ECHOES: <b>{{echoes}}</b></h3></div>

@@ -8,23 +8,22 @@ from xml.etree import ElementTree as ET
 from collections import OrderedDict 
 import requests
 from django.contrib.auth.models import User, Group
+import openedx.core.djangoapps.enrollments.api
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock
 from xblock.fields import Integer, Boolean, String, List, Dict, Scope, ScopeBase, UserScope, BlockScope
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable import StudioContainerXBlockMixin, StudioEditableXBlockMixin
 
-from .clf.clf import Clf
-
 loader = ResourceLoader(__name__)
 
-# @XBlock.needs("i18n")
-@XBlock.wants('user')
+@XBlock.needs("i18n")
+@XBlock.needs('user')
+@XBlock.needs('teams')
 class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBlock):
     """
     TO-DO: document what your XBlock does.
     """
-    
     """ PACKAGE """
     display_name = String(default="Collaborative Logical Framework", scope=Scope.settings,
         help="Display name of the component"
@@ -35,11 +34,14 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
     packageId = String(default='', scope=Scope.settings,
         help="Identifier for the package of the Clf in the database",
     )
-    clfId = String(default='', scope=Scope.user_state_summary,
+    clfId = String(default='', scope=Scope.content,
         help="Identifier for the Clf in the database",
     )
-    clf = Dict(default={}, scope=Scope.user_state_summary,
+    clf = Dict(default={}, scope=Scope.content,
         help="Data from the Clf in the database",
+    )
+    students = List(default=[], scope=Scope.user_state_summary,
+        help="List of users enrolled to the course",
     )
     
     """ CLF COURSE DEFAULT DATA """
@@ -136,7 +138,14 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         The primary view of the CLFClientXBlock, shown to students
         when viewing courses.
         """
-        self.message = self.ugettext("Welcome")
+        user_service = self.runtime.service(self, 'user')
+        username = user_service.get_current_user().opt_attrs['edx-platform.username']
+#         if (not username in self.students):
+#             self.students.append(username)
+        self.message = "Welcome " + username 
+        self.message += " List: " + str(self.students) 
+        self.message += " PackageId: " + self.packageId
+        self.message += " ClfId: " + self.clfId
         frag = Fragment()
         frag.add_content(loader.render_template(
             'templates/clfclient.html',
@@ -153,7 +162,8 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         when viewing courses.
         """
         user_service = self.runtime.service(self, 'user')
-        dj_users = User.objects.all()
+#         team_service = self.runtime.service(self, 'teams')
+#         dj_users = User.objects.all()
         if (self.clfId == ''):
             data = OrderedDict([('packageId', self.packageId), ('name', 'New CLF'), 
                 ('description', 'New description'), ('enabled', 'false')]) 
@@ -175,8 +185,8 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         status = self.update_clf_info_from_server()
         frag = Fragment()  
         html_context = dict(
-            user = user_service.get_current_user().full_name,
-            dj_users = dj_users,
+            echoes = str(self.course_id),
+            current_user = user_service.get_current_user().opt_attrs['edx-platform.username'],
             self = self,
             clf = self.clf,
             back_icon=self.runtime.local_resource_url(self, 'static/icons/back-016.png'),
@@ -184,20 +194,22 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         frag.add_content(loader.render_template('templates/clfclient-author.html', html_context))
         frag.add_css_url("https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css")
         frag.add_css_url("https://use.fontawesome.com/releases/v5.7.0/css/all.css")
-        frag.add_javascript(self.resource_string("static/js/src/clfclient-author.js"))     
+        frag.add_javascript(self.resource_string("static/js/src/clfclient-author.js")) 
         frag.initialize_js('CLFClientXBlock')
         return frag
     
-    def get_date_from_string(self, str):
-        return dateutil.parser.parse(str)
+#     def get_date_from_string(self, str):
+#         return dateutil.parser.parse(str)
     
     def update_clf_info_from_server(self):
         status, self.clf = self.clf_service('getClf', {'clfId': self.clfId})
         if (status['CodeMajor'] == 'Success'):
-#             for ph in self.clf['phases']:
-#                 ph['ini'] = dateutil.parser.parse(ph['ini'])
-#                 ph['agree'] = dateutil.parser.parse(ph['agree'])
-#                 ph['fin'] = dateutil.parser.parse(ph['fin'])
+            # force a list of phases in the clf
+            if (not 'phases' in self.clf):
+                self.clf['phases'] = []
+            elif (not isinstance(self.clf['phases'], list)):
+                self.clf['phases'] = [self.clf['phases']]
+            # update the type of calculation of each indicator
             for ind in self.clf['indicators']:
                 status, result = self.clf_service('getIndicatorTypeCalculation', OrderedDict([
                     ('clfId', self.clfId), ('indicatorId', ind['id'])]))
@@ -213,6 +225,8 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
             for param in self.clf['phases']:
                 if (param['id'] == data['phase_id']):
                     return {'result': 'success', 'phase_data': param}
+        elif (data['action'] == 'list'):
+            return {'result': 'success', 'phase_data': self.clf['phases']}
         elif (data['action'] == 'new'):
             phase = OrderedDict([
                 ('clfId', self.clfId), 
@@ -221,7 +235,7 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
                 ('state', data['phase_data']['state']), 
                 ('ini', data['phase_data']['ini']), 
                 ('agree', data['phase_data']['agree']), 
-                ('fin', data['phase_data']['agree']), 
+                ('fin', data['phase_data']['fin']), 
                 ('automatic', data['phase_data']['automatic']), 
                 ('guideline', data['phase_data']['guideline']), 
                 ('scheduleCalc', data['phase_data']['scheduleCalc']), 
@@ -235,18 +249,17 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
                     return {'result': 'success', 'phase_data': phase}
         elif (data['action'] == 'edit'):
             phase = OrderedDict([
-                ('phaseeterId', data['phase_data']['id']), 
+                ('phaseId', data['phase_data']['id']), 
                 ('name', data['phase_data']['name']), 
-                ('description', data['phase_data']['description']), 
-                ('type', '0'), 
-                ('target', data['phase_data']['target']), 
-                ('query', data['phase_data']['query']), 
-                ('clfId', self.clfId), 
-                ('phaseeterClass', 'N'), 
-                ('metricAlias', data['phase_data']['metricAlias']), 
-                ('values', ''), 
-                ('metricType', data['phase_data']['metricType']), 
-                ('dataType', data['phase_data']['dataType']),
+                ('state', data['phase_data']['state']), 
+                ('type', data['phase_data']['type']), 
+                ('ini', data['phase_data']['ini']), 
+                ('agree', data['phase_data']['agree']), 
+                ('fin', data['phase_data']['fin']), 
+                ('automatic', data['phase_data']['automatic']), 
+                ('guideline', data['phase_data']['guideline']), 
+                ('scheduleCalc', data['phase_data']['scheduleCalc']), 
+                ('autoRebuild', data['phase_data']['autoRebuild'])
             ]) 
             status, result = self.clf_service('updatePhase', phase)
             if (status['CodeMajor'] == 'Success'):
@@ -280,6 +293,8 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
             for ind in self.clf['indicators']:
                 if (ind['id'] == data['ind_id']):
                     return {'result': 'success', 'ind_data': ind}
+        elif (data['action'] == 'list'):
+            return {'result': 'success', 'ind_data': self.clf['indicators']}
         elif (data['action'] == 'new'):
             ind = OrderedDict([
                 ('name', data['ind_data']['name']), 
@@ -345,6 +360,8 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
             for param in self.clf['parameters']:
                 if (param['id'] == data['param_id']):
                     return {'result': 'success', 'param_data': param}
+        elif (data['action'] == 'list'):
+            return {'result': 'success', 'param_data': self.clf['parameters']}
         elif (data['action'] == 'new'):
             param = OrderedDict([
                 ('name', data['param_data']['name']), 
@@ -411,15 +428,15 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         return {'result': 'failure', 'data': ''}
     
     def clf_service(self, serv_name, data = {}):
-        url = self.serverProtocol + '://' + self.serverIP + ':' + self.serverPort 
-        url += '/' + self.serverWSDLLocation
+        url = str(self.serverProtocol) + '://' + str(self.serverIP)
+        url += ':' + str(self.serverPort) + '/' + str(self.serverWSDLLocation)
         wsschema = 'http://schemas.xmlsoap.org/soap/envelope/'
-        nspace = self.serverNSpace
+        nspace = str(self.serverNSpace)
         root = ET.Element('soapenv:Envelope', 
             {'xmlns:soapenv': wsschema, 'xmlns:ser': nspace}
         )
         headUUID = ET.Element('ser:UUID')
-        headUUID.text = self.packageUUID
+        headUUID.text = str(self.packageUUID)
         headAuth = ET.Element('ser:clfAuthentication')
         headAuth.append(headUUID)
         head = ET.Element('soapenv:Header')
@@ -433,18 +450,18 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         body = ET.Element('soapenv:Body')
         body.append(bodyData)
         root.append(body)
-        print('SERVICE REQUEST: ', ET.tostring(root))
+#         print('SERVICE REQUEST: ', ET.tostring(root))
         headers = {'Content-Type':'text/xml'}
         try:
             response = requests.post(url, headers=headers, data=ET.tostring(root))
             root = ET.fromstring(response.content)
-            print('SERVICE RESPONSE: ', response.content)
+#             print('SERVICE RESPONSE: ', response.content)
             status_root = root[0][0]
-            status = {}
+            status = OrderedDict()
             for child in status_root:
                 status[child.tag.split('}', 1)[1]] = child.text
             result_root = root[1][0][0]
-            result = {}
+            result = OrderedDict()
             if (len(result_root) == 0):
                 # single result
                 result[result_root.tag.split('}', 1)[1]] = result_root.text 
@@ -457,7 +474,7 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
                         result[child_key] = child.text
                     else:
                         # structured results in the structure
-                        childresult = {}
+                        childresult = OrderedDict()
                         for grandchild in child:
                             grandchild_key = grandchild.tag.split('}', 1)[1]
                             childresult[grandchild_key] = grandchild.text
@@ -474,11 +491,11 @@ class CLFClientXBlock(StudioContainerXBlockMixin, StudioEditableXBlockMixin, XBl
         except:
             print('SERVICE ERROR: Cannot connect to the CLF server')
             result_root = root[1][0]
-            result = {}
+            result = OrderedDict()
             for child in result_root:
                 result[child.tag] = child.text
-        print('SERVICE STATUS: ', status)
-        print('SERVICE RESULT: ', result)
+#         print('SERVICE STATUS: ', status)
+#         print('SERVICE RESULT: ', result)
         return status, result
         
     def studio_view(self, context=None):
